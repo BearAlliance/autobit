@@ -11,6 +11,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const rm = require("typed-rest-client/RestClient");
 const hm = require("typed-rest-client/Handlers");
 const ht = require("typed-rest-client/HttpClient");
+const httpUtility_1 = require("./httpUtility");
 const prComposite_1 = require("./types/prComposite");
 var ChangeType;
 (function (ChangeType) {
@@ -71,13 +72,13 @@ class BitBucket {
     mergePr(id, version) {
         return __awaiter(this, void 0, void 0, function* () {
             let response = yield this.http.post(`${this.baseUrl}/projects/RED/repos/redbox-spa/pull-requests/${id}/merge?version=${version}`, '', postHeaders);
-            this.validatePostResponse(response);
+            httpUtility_1.HttpUtility.validatePostResponse(response);
         });
     }
     postComment(id, comment) {
         return __awaiter(this, void 0, void 0, function* () {
             let response = yield this.http.post(`${this.baseUrl}/projects/RED/repos/redbox-spa/pull-requests/${id}/comments`, JSON.stringify({ text: comment }), postHeaders);
-            this.validatePostResponse(response);
+            httpUtility_1.HttpUtility.validatePostResponse(response);
         });
     }
     updateCacheAndReturnDiffs(composites) {
@@ -185,12 +186,6 @@ class BitBucket {
                     break;
                 }
             }
-        }
-    }
-    validatePostResponse(response) {
-        if (response.message.statusCode !== 200 && response.message.statusCode !== 201) {
-            console.log(response.message);
-            throw `(${response.message.statusCode}) ${response.message.statusMessage}`;
         }
     }
 }

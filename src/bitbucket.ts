@@ -6,7 +6,7 @@ import * as ht from 'typed-rest-client/HttpClient';
 import * as prs from './types/prs';
 import * as activities from './types/activities';
 import { MergeStatus } from './types/merge';
-
+import { HttpUtility} from './httpUtility';
 import { PrComposite } from './types/prComposite';
 import { Flowdock } from './flowdock';
 
@@ -68,12 +68,12 @@ export class BitBucket {
 
   async mergePr(id: number, version: number) {
     let response = await this.http.post(`${this.baseUrl}/projects/RED/repos/redbox-spa/pull-requests/${id}/merge?version=${version}`, '', postHeaders);
-    this.validatePostResponse(response);
+    HttpUtility.validatePostResponse(response);
   }
 
   async postComment(id: number, comment: string) {
     let response = await this.http.post(`${this.baseUrl}/projects/RED/repos/redbox-spa/pull-requests/${id}/comments`, JSON.stringify({ text: comment }), postHeaders);
-    this.validatePostResponse(response);
+    HttpUtility.validatePostResponse(response);
   }
 
   updateCacheAndReturnDiffs(composites: PrComposite[]): ChangeComposite[] {
@@ -182,13 +182,6 @@ export class BitBucket {
           break;
         }
       }
-    }
-  }
-
-  private validatePostResponse(response: ht.HttpClientResponse) {
-    if (response.message.statusCode !== 200 && response.message.statusCode !== 201) {
-      console.log(response.message);
-      throw `(${response.message.statusCode}) ${response.message.statusMessage}`;
     }
   }
 }

@@ -4,6 +4,7 @@ import * as hm from 'typed-rest-client/Handlers';
 import * as ifm from 'typed-rest-client/Interfaces';
 import { PrComposite } from "./types/prComposite";
 import { ChangeComposite, ChangeType } from './bitbucket';
+import { HttpUtility } from './httpUtility';
 
 export class Flowdock {
   basicHandler: hm.BasicCredentialHandler;
@@ -42,7 +43,8 @@ export class Flowdock {
     };
 
     let response = await this.http.post(`https://api.flowdock.com/v1/messages/chat/${this.token}`, JSON.stringify(content), headers);
-  }
-
-    
+    console.log(response);
+    console.log(response.message);
+    HttpUtility.validatePostResponse(response);
+  }    
 }

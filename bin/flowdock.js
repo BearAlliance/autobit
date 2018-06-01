@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const ht = require("typed-rest-client/HttpClient");
 const bitbucket_1 = require("./bitbucket");
+const httpUtility_1 = require("./httpUtility");
 class Flowdock {
     constructor(token) {
         this.http = new ht.HttpClient('autobit');
@@ -43,6 +44,7 @@ class Flowdock {
                 "content-type": "application/json"
             };
             let response = yield this.http.post(`https://api.flowdock.com/v1/messages/chat/${this.token}`, JSON.stringify(content), headers);
+            httpUtility_1.HttpUtility.validatePostResponse(response);
         });
     }
 }
