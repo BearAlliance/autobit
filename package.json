@@ -1,9 +1,10 @@
 {
   "name": "autobit",
+  "homepage": "https://github.com/johnwest80/autobit#readme",
   "bin": {
     "autobit": "./bin/main.js"
   },
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "bitbucket automation",
   "main": "index.js",
   "scripts": {
