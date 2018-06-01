@@ -22,7 +22,12 @@ Promise.resolve(options.username || prompt('Enter your username: ')).then((usern
     let fd = new Flowdock(options.flowdockToken);
     let bb = new BitBucket(username, password, options.branch, options.bitbucketBaseUrl, options.proxyBypass, options.proxyUrl, fd);
 
-    fd.postInfo('Autobit started');
+    try {
+      fd.postInfo('Autobit started');
+    }
+    catch (ex) {
+      console.log('First flowdock failed', ex);
+    }
 
     bb.loop();
     setInterval(() => bb.loop(), options.intervalSeconds * 1000);
