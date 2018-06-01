@@ -1,0 +1,23 @@
+{
+  "name": "autobit",
+  "bin": {
+    "autobit": "./bin/main.js"
+  },
+  "version": "1.0.0",
+  "description": "bitbucket automation",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc --outDir bin"
+  },
+  "author": "john west",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^10.1.4",
+    "typescript": "^2.9.1"
+  },
+  "dependencies": {
+    "command-line-args": "^5.0.2",
+    "password-prompt": "^1.0.6",
+    "typed-rest-client": "^1.0.7"
+  }
+}
