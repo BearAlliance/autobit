@@ -11,6 +11,7 @@ const optionDefinitions = [
   { name: 'bitbucketBaseUrl', alias: 'l', type: String },
   { name: 'proxyBypass', alias: 'y', type: String },
   { name: 'proxyUrl', alias: 'x', type: String, defaultValue: '' },
+  { name: 'intervalSeconds', type: Number, defaultValue: 60 }
 ]
 
 const commandLineArgs = require('command-line-args');
@@ -24,7 +25,7 @@ Promise.resolve(options.username || prompt('Enter your username: ')).then((usern
     fd.postInfo('Autobit started');
 
     bb.loop();
-    setInterval(() => bb.loop(), 10000);
+    setInterval(() => bb.loop(), options.intervalSeconds * 1000);
   }).catch((err) => {
     console.log(err);
   });
