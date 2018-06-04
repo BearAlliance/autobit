@@ -43,7 +43,6 @@ class BitBucket {
     getPrs() {
         return __awaiter(this, void 0, void 0, function* () {
             let response = yield this.rest.get('/dashboard/pull-requests?state=OPEN');
-            console.log(response.result.values[0].reviewers);
             return response.result;
         });
     }
@@ -172,6 +171,7 @@ class BitBucket {
         composite.openTasks = pr.properties.openTaskCount;
         composite.canMerge = merge.canMerge;
         composite.isConflicted = pr.properties.mergeResult.outcome === 'CONFLICTED';
+        composite.link = pr.links.self.length > 0 ? pr.links.self[0].href : '';
         return composite;
     }
     static updateCompositeFromActivities(composite, activities) {

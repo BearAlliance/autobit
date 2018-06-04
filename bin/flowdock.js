@@ -35,7 +35,8 @@ class Flowdock {
         let line1 = `**${composite.changeAsString}** : *${composite.composite.title}*`;
         let line2 = `${composite.composite.author} / ${composite.composite.createdDate.toDateString()}`;
         let line3 = composite.changeType === bitbucket_1.ChangeType.Deleted ? '' : `\`Approvals: ${composite.composite.approvals}\` ${composite.composite.isConflicted ? `\`:interrobang: Merge conflict\`` : ''} ${composite.composite.openTasks ? `\`:o: Open Tasks: ${composite.composite.openTasks}\`` : ''} ${composite.composite.needWorks ? `\`:exclamation: Needs work\`` : ''} ${!composite.composite.needWorks && composite.composite.canMerge ? `\`:white_check_mark: Merge\`` : ''}`;
-        return `${line1}\r\n${line2}\r\n${line3}`;
+        let line4 = `[PR](${composite.composite.link})`;
+        return `${line1}\r\n${line2}\r\n${line3}\r\n${line4}`;
     }
     postContent(message) {
         return __awaiter(this, void 0, void 0, function* () {
