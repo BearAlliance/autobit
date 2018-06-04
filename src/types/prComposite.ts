@@ -11,4 +11,5 @@ export class PrComposite {
   canMerge: boolean;
   isConflicted: boolean;
   mergeRequested = false;
+  link: string;
 }

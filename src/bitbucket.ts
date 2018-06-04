@@ -166,6 +166,7 @@ export class BitBucket {
     composite.openTasks = pr.properties.openTaskCount;
     composite.canMerge = merge.canMerge;
     composite.isConflicted = pr.properties.mergeResult.outcome === 'CONFLICTED';
+    composite.link = pr.links.self.length > 0 ? pr.links.self[0].href : '';
 
     return composite;
   }
