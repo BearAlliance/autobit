@@ -42,7 +42,8 @@ class BitBucket {
     }
     getPrs() {
         return __awaiter(this, void 0, void 0, function* () {
-            let response = yield this.rest.get('/dashboard/pull-requests?state=OPEN&role=REVIEWER');
+            let response = yield this.rest.get('/dashboard/pull-requests?state=OPEN');
+            console.log(response.result.values[0].reviewers);
             return response.result;
         });
     }

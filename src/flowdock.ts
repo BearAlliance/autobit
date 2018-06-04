@@ -43,8 +43,6 @@ export class Flowdock {
     };
 
     let response = await this.http.post(`https://api.flowdock.com/v1/messages/chat/${this.token}`, JSON.stringify(content), headers);
-    console.log(response);
-    console.log(response.message);
     HttpUtility.validatePostResponse(response);
   }    
 }

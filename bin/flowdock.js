@@ -44,8 +44,6 @@ class Flowdock {
                 "content-type": "application/json"
             };
             let response = yield this.http.post(`https://api.flowdock.com/v1/messages/chat/${this.token}`, JSON.stringify(content), headers);
-            console.log(response);
-            console.log(response.message);
             httpUtility_1.HttpUtility.validatePostResponse(response);
         });
     }

@@ -43,7 +43,7 @@ export class BitBucket {
   }
 
   async getPrs() {
-    let response = await this.rest.get<prs.Prs>('/dashboard/pull-requests?state=OPEN&role=REVIEWER');
+    let response = await this.rest.get<prs.Prs>('/dashboard/pull-requests?state=OPEN');
     return response.result;
   }
 
