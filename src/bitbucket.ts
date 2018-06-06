@@ -87,7 +87,6 @@ export class BitBucket {
       } else if (
         composite.mergeRequested !== existingCachedComposite.mergeRequested ||
         composite.title !== existingCachedComposite.title ||
-        composite.updatedDate.toISOString() !== existingCachedComposite.updatedDate.toISOString() ||
         composite.approvals !== existingCachedComposite.approvals ||
         composite.needWorks !== existingCachedComposite.needWorks ||
         composite.openTasks !== existingCachedComposite.openTasks ||
