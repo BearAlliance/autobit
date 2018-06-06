@@ -50,3 +50,4 @@ class Flowdock {
     }
 }
 exports.Flowdock = Flowdock;
+//# sourceMappingURL=flowdock.js.map

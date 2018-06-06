@@ -31,3 +31,4 @@ Promise.resolve(options.username || prompt('Enter your username: ')).then((usern
         console.log(err);
     });
 });
+//# sourceMappingURL=main.js.map

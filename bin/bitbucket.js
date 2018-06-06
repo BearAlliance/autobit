@@ -190,3 +190,4 @@ class BitBucket {
     }
 }
 exports.BitBucket = BitBucket;
+//# sourceMappingURL=bitbucket.js.map

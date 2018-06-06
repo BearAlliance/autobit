@@ -5,6 +5,19 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "args": [
+        "-u",
+        "westj0",
+        "-b",
+        "refs/heads/feature/connections",
+        "-f",
+        "6b62c277db6029181cb58ba2d92d363b",
+        "--bitbucketBaseUrl",
+        "https://bitbucket.es.ad.adp.com/rest/api/1.0",
+        "--proxyBypass",
+        "adp.com"
+      ],
+      "console": "integratedTerminal",
       "type": "node",
       "request": "launch",
       "name": "Launch Program",
