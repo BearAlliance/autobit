@@ -11,28 +11,40 @@ const optionDefinitions = [
   { name: 'bitbucketBaseUrl', alias: 'l', type: String },
   { name: 'proxyBypass', alias: 'y', type: String },
   { name: 'proxyUrl', alias: 'x', type: String, defaultValue: '' },
-  { name: 'intervalSeconds', type: Number, defaultValue: 60 }
+  { name: 'intervalSeconds', type: Number, defaultValue: 10 },
+  { name: 'flowdockUsername', type: String, defaultValue: 'autobit' }
 ]
 
 const commandLineArgs = require('command-line-args');
 const options = commandLineArgs(optionDefinitions);
 
-Promise.resolve(options.username || prompt('Enter your username: ')).then((username) => {
-  prompt('Enter your password: ', { method: 'hide' }).then((password) => {
-    let fd = new Flowdock(options.flowdockToken);
-    let bb = new BitBucket(username, password, options.branch, options.bitbucketBaseUrl, options.proxyBypass, options.proxyUrl, fd);
+class Main {
+  start() {
+    Promise.resolve(options.username || prompt('Enter your username: ')).then((username) => {
+      prompt('Enter your password: ', { method: 'hide' }).then((password) => {
+        let fd = new Flowdock(options.flowdockToken, options.flowdockUsername);
+        fd.initializeFlowdock().then(async () => {
+          let bb = new BitBucket(username, password, options.branch, options.bitbucketBaseUrl, options.proxyBypass, options.proxyUrl, fd);
 
-    try {
-      fd.postInfo('Autobit started');
-    }
-    catch (ex) {
-      console.log('First flowdock failed', ex);
-    }
+          console.log('hello');
 
-    bb.loop();
-    setInterval(() => bb.loop(), options.intervalSeconds * 1000);
-  }).catch((err) => {
-    console.log(err);
-  });
+          try {
+            await fd.postInfo('Autobit started');
+            await fd.postInfo('Bitbucket branch ' + options.branch);
+          }
+          catch (ex) {
+            console.log('First flowdock failed', ex);
+          }
 
-});
+          bb.loop();
+          setInterval(() => bb.loop(), options.intervalSeconds * 1000);
+        }).catch((err) => {
+          console.log(err);
+        });
+      })
+    });
+  }
+}
+
+let main = new Main();
+main.start();

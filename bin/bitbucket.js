@@ -89,19 +89,24 @@ class BitBucket {
                 changes.push({ composite, changeType: ChangeType.Added, changeAsString: ChangeType[ChangeType.Added] });
                 this.cachedComposites.push(composite);
             }
-            else if (composite.mergeRequested !== existingCachedComposite.mergeRequested ||
-                composite.title !== existingCachedComposite.title ||
-                composite.approvals !== existingCachedComposite.approvals ||
-                composite.needWorks !== existingCachedComposite.needWorks ||
-                composite.openTasks !== existingCachedComposite.openTasks ||
-                composite.canMerge !== existingCachedComposite.canMerge ||
-                composite.isConflicted !== existingCachedComposite.isConflicted) {
-                changes.push({ composite, changeType: ChangeType.Changed, changeAsString: ChangeType[ChangeType.Changed] });
+            else {
+                //always update the cache with the latest composite
                 this.cachedComposites.splice(this.cachedComposites.indexOf(existingCachedComposite), 1);
                 this.cachedComposites.push(composite);
+                //see if anything we care about has changed
+                if (composite.title !== existingCachedComposite.title ||
+                    composite.approvals !== existingCachedComposite.approvals ||
+                    composite.needWorks !== existingCachedComposite.needWorks ||
+                    composite.openTasks !== existingCachedComposite.openTasks ||
+                    composite.canMerge !== existingCachedComposite.canMerge ||
+                    composite.isConflicted !== existingCachedComposite.isConflicted) {
+                    //if so, push it into the change array
+                    changes.push({ composite, changeType: ChangeType.Changed, changeAsString: ChangeType[ChangeType.Changed] });
+                }
+                ;
             }
-            ;
         });
+        //check for deleted composites
         this.cachedComposites.forEach(cachedComposite => {
             let foundItem = composites.find(composite => cachedComposite.id === composite.id);
             if (!foundItem) {
@@ -119,11 +124,16 @@ class BitBucket {
                     this.loopExecuting = true;
                     let composites = yield this.getAllComposites();
                     for (let composite of composites) {
+                        let activities = yield this.getActivities(composite.id);
+                        BitBucket.updateCompositeFromActivities(composite, activities.values);
+                        if (composite.sendMergeRequestNotification) {
+                            let requestMessage = `Automerge has been ${composite.mergeRequested ? 'requested' : 'canceled'} for ${this.flowdock.createPRNameLink(composite)} by ${composite.lastAutobitActionRequestedBy}`;
+                            yield this.flowdock.postInfo(requestMessage, composite);
+                            composite.sendMergeRequestNotification = false;
+                        }
                         if (composite.canMerge) {
-                            let activities = yield this.getActivities(composite.id);
-                            BitBucket.updateCompositeFromActivities(composite, activities.values);
                             if (composite.mergeRequested) {
-                                let requestMessage = `Automerge requested for ${composite.title}`;
+                                let requestMessage = `Automerge in progess for ${composite.title} by ${composite.lastAutobitActionRequestedBy}`;
                                 let completedMessage = `Automerge completed for ${composite.title}`;
                                 yield this.flowdock.postInfo(requestMessage);
                                 yield this.postComment(composite.id, requestMessage);
@@ -135,8 +145,9 @@ class BitBucket {
                     }
                     ;
                     let changes = this.updateCacheAndReturnDiffs(composites);
-                    changes.forEach((change) => __awaiter(this, void 0, void 0, function* () { return yield this.flowdock.postChange(change); }));
-                    console.log(changes);
+                    changes.forEach((change) => __awaiter(this, void 0, void 0, function* () {
+                        change.composite.threadId = yield this.flowdock.postChange(change);
+                    }));
                 }
                 catch (ex) {
                     console.log('ERROR', ex);
@@ -154,10 +165,10 @@ class BitBucket {
     }
     getCompositeWithMergeStatus(pr) {
         return __awaiter(this, void 0, void 0, function* () {
-            return BitBucket.createComposite(pr, yield this.getMergeStatus(pr.id));
+            return this.createComposite(pr, yield this.getMergeStatus(pr.id));
         });
     }
-    static createComposite(pr, merge) {
+    createComposite(pr, merge) {
         let composite = new prComposite_1.PrComposite();
         composite.version = pr.version;
         composite.id = pr.id;
@@ -171,21 +182,41 @@ class BitBucket {
         composite.canMerge = merge.canMerge;
         composite.isConflicted = pr.properties.mergeResult.outcome === 'CONFLICTED';
         composite.link = pr.links.self.length > 0 ? pr.links.self[0].href : '';
+        let existingCachedComposite = this.cachedComposites.find(cachedComposite => cachedComposite.id === composite.id);
+        //carry over the properties that need to persist across composite retrievals
+        if (existingCachedComposite) {
+            composite.mergeRequested = existingCachedComposite.mergeRequested;
+            composite.lastAutobitActionRequestedBy = existingCachedComposite.lastAutobitActionRequestedBy;
+            composite.threadId = existingCachedComposite.threadId;
+        }
         return composite;
     }
     static updateCompositeFromActivities(composite, activities) {
-        composite.mergeRequested = false;
+        let commentFound = null;
+        let originalMergeRequestedStatus = composite.mergeRequested;
         for (let i = 0; i < activities.length - 1; i++) {
             let activity = activities[i];
             if (activity.comment) {
                 if (activity.comment.text === 'cancel') {
+                    composite.mergeRequested = false;
+                    commentFound = activity.comment;
                     break;
                 }
                 else if (activity.comment.text === 'mab') {
                     composite.mergeRequested = true;
+                    commentFound = activity.comment;
                     break;
                 }
             }
+        }
+        if (!commentFound) {
+            composite.mergeRequested = false;
+        }
+        else {
+            composite.lastAutobitActionRequestedBy = commentFound.author.displayName;
+        }
+        if (composite.mergeRequested != originalMergeRequestedStatus) {
+            composite.sendMergeRequestNotification = true;
         }
     }
 }

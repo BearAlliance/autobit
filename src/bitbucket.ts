@@ -6,7 +6,7 @@ import * as ht from 'typed-rest-client/HttpClient';
 import * as prs from './types/prs';
 import * as activities from './types/activities';
 import { MergeStatus } from './types/merge';
-import { HttpUtility} from './httpUtility';
+import { HttpUtility } from './httpUtility';
 import { PrComposite } from './types/prComposite';
 import { Flowdock } from './flowdock';
 
@@ -84,20 +84,25 @@ export class BitBucket {
       if (!existingCachedComposite) {
         changes.push({ composite, changeType: ChangeType.Added, changeAsString: ChangeType[ChangeType.Added] });
         this.cachedComposites.push(composite);
-      } else if (
-        composite.mergeRequested !== existingCachedComposite.mergeRequested ||
-        composite.title !== existingCachedComposite.title ||
-        composite.approvals !== existingCachedComposite.approvals ||
-        composite.needWorks !== existingCachedComposite.needWorks ||
-        composite.openTasks !== existingCachedComposite.openTasks ||
-        composite.canMerge !== existingCachedComposite.canMerge ||
-        composite.isConflicted !== existingCachedComposite.isConflicted
-      ) {
-        changes.push({ composite, changeType: ChangeType.Changed, changeAsString: ChangeType[ChangeType.Changed] });
+      } else {
+        //always update the cache with the latest composite
         this.cachedComposites.splice(this.cachedComposites.indexOf(existingCachedComposite), 1);
         this.cachedComposites.push(composite);
-      };
+        //see if anything we care about has changed
+        if (
+          composite.title !== existingCachedComposite.title ||
+          composite.approvals !== existingCachedComposite.approvals ||
+          composite.needWorks !== existingCachedComposite.needWorks ||
+          composite.openTasks !== existingCachedComposite.openTasks ||
+          composite.canMerge !== existingCachedComposite.canMerge ||
+          composite.isConflicted !== existingCachedComposite.isConflicted
+        ) {
+          //if so, push it into the change array
+          changes.push({ composite, changeType: ChangeType.Changed, changeAsString: ChangeType[ChangeType.Changed] });
+        };
+      }
     });
+    //check for deleted composites
     this.cachedComposites.forEach(cachedComposite => {
       let foundItem = composites.find(composite => cachedComposite.id === composite.id);
       if (!foundItem) {
@@ -117,11 +122,18 @@ export class BitBucket {
         let composites = await this.getAllComposites();
 
         for (let composite of composites) {
+          let activities = await this.getActivities(composite.id);
+          BitBucket.updateCompositeFromActivities(composite, activities.values);
+
+          if (composite.sendMergeRequestNotification) {
+            let requestMessage = `Automerge has been ${composite.mergeRequested ? 'requested' : 'canceled'} for ${this.flowdock.createPRNameLink(composite)} by ${composite.lastAutobitActionRequestedBy}`;
+            await this.flowdock.postInfo(requestMessage, composite);
+            composite.sendMergeRequestNotification = false;
+          }
+
           if (composite.canMerge) {
-            let activities = await this.getActivities(composite.id);
-            BitBucket.updateCompositeFromActivities(composite, activities.values);
             if (composite.mergeRequested) {
-              let requestMessage = `Automerge requested for ${composite.title}`;
+              let requestMessage = `Automerge in progess for ${composite.title} by ${composite.lastAutobitActionRequestedBy}`;
               let completedMessage = `Automerge completed for ${composite.title}`;
               await this.flowdock.postInfo(requestMessage);
               await this.postComment(composite.id, requestMessage);
@@ -133,8 +145,9 @@ export class BitBucket {
         };
 
         let changes = this.updateCacheAndReturnDiffs(composites);
-        changes.forEach(async (change) => await this.flowdock.postChange(change));
-        console.log(changes);
+        changes.forEach(async (change) => {
+          change.composite.threadId = await this.flowdock.postChange(change)
+        });
       } catch (ex) {
         console.log('ERROR', ex);
         if (ex.statusCode == '401') {
@@ -149,10 +162,10 @@ export class BitBucket {
   }
 
   async getCompositeWithMergeStatus(pr: prs.Value) {
-    return BitBucket.createComposite(pr, await this.getMergeStatus(pr.id));
+    return this.createComposite(pr, await this.getMergeStatus(pr.id));
   }
 
-  static createComposite(pr: prs.Value, merge: MergeStatus) {
+  createComposite(pr: prs.Value, merge: MergeStatus) {
     let composite = new PrComposite();
     composite.version = pr.version;
     composite.id = pr.id;
@@ -167,21 +180,40 @@ export class BitBucket {
     composite.isConflicted = pr.properties.mergeResult.outcome === 'CONFLICTED';
     composite.link = pr.links.self.length > 0 ? pr.links.self[0].href : '';
 
+    let existingCachedComposite = this.cachedComposites.find(cachedComposite => cachedComposite.id === composite.id);
+    //carry over the properties that need to persist across composite retrievals
+    if (existingCachedComposite) {
+      composite.mergeRequested = existingCachedComposite.mergeRequested;
+      composite.lastAutobitActionRequestedBy = existingCachedComposite.lastAutobitActionRequestedBy;
+      composite.threadId = existingCachedComposite.threadId;
+    }
     return composite;
   }
 
   static updateCompositeFromActivities(composite: PrComposite, activities: activities.Activity[]) {
-    composite.mergeRequested = false;
+    let commentFound: activities.Comment = null;
+    let originalMergeRequestedStatus = composite.mergeRequested;
     for (let i = 0; i < activities.length - 1; i++) {
       let activity = activities[i];
       if (activity.comment) {
         if (activity.comment.text === 'cancel') {
+          composite.mergeRequested = false;
+          commentFound = activity.comment;
           break;
         } else if (activity.comment.text === 'mab') {
           composite.mergeRequested = true;
+          commentFound = activity.comment;
           break;
         }
       }
+    }
+    if (!commentFound) {
+      composite.mergeRequested = false;
+    } else {
+      composite.lastAutobitActionRequestedBy = commentFound.author.displayName;
+    }
+    if (composite.mergeRequested != originalMergeRequestedStatus) {
+      composite.sendMergeRequestNotification = true;
     }
   }
 }

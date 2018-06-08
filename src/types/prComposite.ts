@@ -12,4 +12,7 @@ export class PrComposite {
   isConflicted: boolean;
   mergeRequested = false;
   link: string;
+  lastAutobitActionRequestedBy: string;
+  sendMergeRequestNotification: boolean;
+  threadId: string;
 }

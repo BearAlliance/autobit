@@ -8,7 +8,7 @@
   "description": "bitbucket automation",
   "main": "main.js",
   "scripts": {
-    "build": "tsc --outDir bin"
+    "build": "tsc"
   },
   "author": "john west",
   "license": "ISC",
@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "command-line-args": "^5.0.2",
+    "flowdock": "^0.9.1",
     "password-prompt": "^1.0.6",
     "typed-rest-client": "^1.0.7"
   }
