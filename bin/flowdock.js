@@ -16,16 +16,17 @@ class Field {
 }
 exports.Field = Field;
 class Flowdock {
-    constructor(token, username) {
+    constructor(token, username, flowName) {
         this.token = token;
         this.username = username;
+        this.flowName = flowName;
         this.http = new ht.HttpClient('autobit');
         this.base64Authorization = 'BASIC ' + new Buffer(token + ':').toString('base64');
     }
     initializeFlowdock() {
         return __awaiter(this, void 0, void 0, function* () {
             this.session = new Session(this.token);
-            yield this.getFlowId('TACU Automation');
+            yield this.getFlowId(this.flowName);
         });
     }
     getFlowId(flowName) {

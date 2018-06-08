@@ -23,14 +23,14 @@ export class Flowdock {
   base64Authorization: string;
   flowId: string;
 
-  constructor(private token: string, private username: string) {
+  constructor(private token: string, private username: string, private flowName: string) {
     this.http = new ht.HttpClient('autobit');
     this.base64Authorization = 'BASIC ' + new Buffer(token + ':').toString('base64');
   }
 
   async initializeFlowdock() {
     this.session = new Session(this.token);
-    await this.getFlowId('TACU Automation');
+    await this.getFlowId(this.flowName);
   }
 
   async getFlowId(flowName: string) {

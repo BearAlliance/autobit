@@ -12,7 +12,8 @@ const optionDefinitions = [
   { name: 'proxyBypass', alias: 'y', type: String },
   { name: 'proxyUrl', alias: 'x', type: String, defaultValue: '' },
   { name: 'intervalSeconds', type: Number, defaultValue: 10 },
-  { name: 'flowdockUsername', type: String, defaultValue: 'autobit' }
+  { name: 'flowdockUsername', type: String, defaultValue: 'autobit' },
+  { name: 'flowName', type: String }
 ]
 
 const commandLineArgs = require('command-line-args');
@@ -22,7 +23,7 @@ class Main {
   start() {
     Promise.resolve(options.username || prompt('Enter your username: ')).then((username) => {
       prompt('Enter your password: ', { method: 'hide' }).then((password) => {
-        let fd = new Flowdock(options.flowdockToken, options.flowdockUsername);
+        let fd = new Flowdock(options.flowdockToken, options.flowdockUsername, options.flowName);
         fd.initializeFlowdock().then(async () => {
           let bb = new BitBucket(username, password, options.branch, options.bitbucketBaseUrl, options.proxyBypass, options.proxyUrl, fd);
 
