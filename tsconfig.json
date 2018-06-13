@@ -1,10 +1,10 @@
 {
     "include": [
-        "src/**/*"
+        "src/**/*",
+        "spec/**/*"
     ],
     "exclude": [
-        "node_modules",
-        "**/*.spec.ts"
+        "node_modules"
     ],
     "compilerOptions": {
         "module": "commonjs",

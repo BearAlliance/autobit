@@ -2,13 +2,14 @@
   "name": "autobit",
   "homepage": "https://github.com/johnwest80/autobit#readme",
   "bin": {
-    "autobit": "./bin/main.js"
+    "autobit": "./bin/src/main.js"
   },
   "version": "1.0.19",
   "description": "bitbucket automation",
   "main": "main.js",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "test": "jasmine"
   },
   "author": "john west",
   "license": "ISC",
@@ -17,9 +18,14 @@
     "typescript": "^2.9.1"
   },
   "dependencies": {
+    "@types/jasmine": "^2.8.8",
     "command-line-args": "^5.0.2",
     "flowdock": "^0.9.1",
+    "install": "^0.11.0",
+    "jasmine-node": "^1.14.5",
+    "npm": "^6.1.0",
     "password-prompt": "^1.0.6",
+    "ts-mocks": "^2.2.2",
     "typed-rest-client": "^1.0.7"
   }
 }
