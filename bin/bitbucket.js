@@ -26,10 +26,10 @@ const postHeaders = {
     "content-type": "application/json"
 };
 class BitBucket {
-    constructor(username, password, branch, repository, baseUrl, proxyBypass, proxyUrl, flowdock) {
+    constructor(username, password, branches, repository, baseUrl, proxyBypass, proxyUrl, flowdock) {
         this.username = username;
         this.password = password;
-        this.branch = branch;
+        this.branches = branches;
         this.repository = repository;
         this.baseUrl = baseUrl;
         this.proxyBypass = proxyBypass;
@@ -66,7 +66,7 @@ class BitBucket {
     getFilteredPrs() {
         return __awaiter(this, void 0, void 0, function* () {
             let prs = yield this.getPrs();
-            return prs.values.filter((pr) => pr.toRef.id === this.branch);
+            return prs.values.filter((pr) => this.branches.indexOf(pr.toRef.id) != -1);
         });
     }
     getAllComposites() {

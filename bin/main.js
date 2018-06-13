@@ -14,7 +14,7 @@ const flowdock_1 = require("./flowdock");
 let prompt = require('password-prompt');
 const optionDefinitions = [
     { name: 'username', alias: 'u', type: String },
-    { name: 'branch', alias: 'b', type: String },
+    { name: 'branch', alias: 'b', type: String, multiple: true },
     { name: 'flowdockToken', alias: 'f', type: String },
     { name: 'bitbucketBaseUrl', alias: 'l', type: String },
     { name: 'proxyBypass', alias: 'y', type: String },
@@ -36,7 +36,7 @@ class Main {
                     console.log('hello');
                     try {
                         yield fd.postInfo('Autobit started');
-                        yield fd.postInfo('Bitbucket branch ' + options.branch);
+                        options.branch.forEach((branch) => __awaiter(this, void 0, void 0, function* () { return yield fd.postInfo('Bitbucket branch ' + branch); }));
                     }
                     catch (ex) {
                         console.log('First flowdock failed', ex);

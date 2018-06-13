@@ -36,7 +36,7 @@ export class BitBucket {
   loopExecuting = false;
   lastError = null;
 
-  constructor(private username: string, private password: string, private branch: string, private repository: string, private baseUrl: string, private proxyBypass: string, private proxyUrl, private flowdock: Flowdock) {
+  constructor(private username: string, private password: string, private branches: string[], private repository: string, private baseUrl: string, private proxyBypass: string, private proxyUrl, private flowdock: Flowdock) {
     this.basicHandler = new hm.BasicCredentialHandler(username, password);
 
     this.http = new ht.HttpClient('autobit', [this.basicHandler], { proxy: { proxyBypassHosts: [this.proxyBypass], proxyUrl: this.proxyUrl } });
@@ -63,7 +63,7 @@ export class BitBucket {
 
   async getFilteredPrs() {
     let prs = await this.getPrs();
-    return prs.values.filter((pr) => pr.toRef.id === this.branch);
+    return prs.values.filter((pr) => this.branches.indexOf(pr.toRef.id) != -1);
   }
 
   async getAllComposites() {
