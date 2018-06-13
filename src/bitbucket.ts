@@ -34,8 +34,9 @@ export class BitBucket {
   cachedComposites: PrComposite[] = [];
 
   loopExecuting = false;
+  lastError = null;
 
-  constructor(private username: string, private password: string, private branch: string, private baseUrl: string, private proxyBypass: string, private proxyUrl, private flowdock: Flowdock) {
+  constructor(private username: string, private password: string, private branch: string, private repository: string, private baseUrl: string, private proxyBypass: string, private proxyUrl, private flowdock: Flowdock) {
     this.basicHandler = new hm.BasicCredentialHandler(username, password);
 
     this.http = new ht.HttpClient('autobit', [this.basicHandler], { proxy: { proxyBypassHosts: [this.proxyBypass], proxyUrl: this.proxyUrl } });
@@ -43,17 +44,20 @@ export class BitBucket {
   }
 
   async getPrs() {
-    let response = await this.rest.get<prs.Prs>('/dashboard/pull-requests?state=OPEN');
+    let response = await this.rest.get<prs.Prs>(`/${this.repository}/pull-requests?state=OPEN`);
+    HttpUtility.validateRestResponse(response);
     return response.result;
   }
 
   async getActivities(id: number) {
-    let response = await this.rest.get<activities.Activities>(`/projects/RED/repos/redbox-spa/pull-requests/${id}/activities?fromType=comment`);
+    let response = await this.rest.get<activities.Activities>(`/${this.repository}/pull-requests/${id}/activities?fromType=comment`);
+    HttpUtility.validateRestResponse(response);
     return response.result;
   }
 
   async getMergeStatus(id: number) {
-    let response = await this.rest.get<MergeStatus>(`/projects/RED/repos/redbox-spa/pull-requests/${id}/merge`);
+    let response = await this.rest.get<MergeStatus>(`/${this.repository}/pull-requests/${id}/merge`);
+    HttpUtility.validateRestResponse(response);
     return response.result;
   }
 
@@ -67,13 +71,13 @@ export class BitBucket {
   }
 
   async mergePr(id: number, version: number) {
-    let response = await this.http.post(`${this.baseUrl}/projects/RED/repos/redbox-spa/pull-requests/${id}/merge?version=${version}`, '', postHeaders);
-    HttpUtility.validatePostResponse(response);
+    let response = await this.http.post(`${this.baseUrl}/${this.repository}/pull-requests/${id}/merge?version=${version}`, '', postHeaders);
+    HttpUtility.validateHttpResponse(response);
   }
 
   async postComment(id: number, comment: string) {
-    let response = await this.http.post(`${this.baseUrl}/projects/RED/repos/redbox-spa/pull-requests/${id}/comments`, JSON.stringify({ text: comment }), postHeaders);
-    HttpUtility.validatePostResponse(response);
+    let response = await this.http.post(`${this.baseUrl}/${this.repository}/pull-requests/${id}/comments`, JSON.stringify({ text: comment }), postHeaders);
+    HttpUtility.validateHttpResponse(response);
   }
 
   updateCacheAndReturnDiffs(composites: PrComposite[]): ChangeComposite[] {
@@ -148,11 +152,24 @@ export class BitBucket {
         changes.forEach(async (change) => {
           change.composite.threadId = await this.flowdock.postChange(change)
         });
+        this.lastError = null;
       } catch (ex) {
-        console.log('ERROR', ex);
-        if (ex.statusCode == '401') {
-          await this.flowdock.postError('Autobit stopped with ERROR ' + ex.statusCode);
-          process.exit(ex.statusCode);
+        let exAsString = ex.toString();
+        console.log('ERROR', exAsString);
+        //don't repeat the same error over and over in the flow
+        if (this.lastError != exAsString) {
+          await this.flowdock.postError('Autobit ERROR ' + exAsString);
+
+          //check for 401 - we don't want to lock an account
+          let matches = exAsString.match(/\(([^)]+)\)/);
+          if (matches.length > 0) {
+            let statusCode = matches[1];
+            if (ex == '401') {
+              await this.flowdock.postError('Autobit stopped with ERROR ' + ex.statusCode);
+              process.exit(ex.statusCode);
+            }
+          }
+          this.lastError = exAsString;
         }
       } finally {
         console.log('Complete...');

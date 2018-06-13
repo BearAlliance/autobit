@@ -120,7 +120,7 @@ class Flowdock {
                 "X-flowdock-wait-for-message": "true"
             };
             let response = yield this.http.post(`https://api.flowdock.com/messages`, JSON.stringify(content), headers);
-            httpUtility_1.HttpUtility.validatePostResponse(response);
+            httpUtility_1.HttpUtility.validateHttpResponse(response);
             let body = JSON.parse(yield response.readBody());
             return body.thread_id;
         });

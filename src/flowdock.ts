@@ -115,7 +115,7 @@ export class Flowdock {
     };
 
     let response = await this.http.post(`https://api.flowdock.com/messages`, JSON.stringify(content), headers);
-    HttpUtility.validatePostResponse(response);
+    HttpUtility.validateHttpResponse(response);
     let body = JSON.parse(await response.readBody());
     return body.thread_id;
   }

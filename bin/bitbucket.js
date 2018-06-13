@@ -26,35 +26,40 @@ const postHeaders = {
     "content-type": "application/json"
 };
 class BitBucket {
-    constructor(username, password, branch, baseUrl, proxyBypass, proxyUrl, flowdock) {
+    constructor(username, password, branch, repository, baseUrl, proxyBypass, proxyUrl, flowdock) {
         this.username = username;
         this.password = password;
         this.branch = branch;
+        this.repository = repository;
         this.baseUrl = baseUrl;
         this.proxyBypass = proxyBypass;
         this.proxyUrl = proxyUrl;
         this.flowdock = flowdock;
         this.cachedComposites = [];
         this.loopExecuting = false;
+        this.lastError = null;
         this.basicHandler = new hm.BasicCredentialHandler(username, password);
         this.http = new ht.HttpClient('autobit', [this.basicHandler], { proxy: { proxyBypassHosts: [this.proxyBypass], proxyUrl: this.proxyUrl } });
         this.rest = new rm.RestClient('autobit', baseUrl, [this.basicHandler], { proxy: { proxyBypassHosts: [this.proxyBypass], proxyUrl: this.proxyUrl } });
     }
     getPrs() {
         return __awaiter(this, void 0, void 0, function* () {
-            let response = yield this.rest.get('/dashboard/pull-requests?state=OPEN');
+            let response = yield this.rest.get(`/${this.repository}/pull-requests?state=OPEN`);
+            httpUtility_1.HttpUtility.validateRestResponse(response);
             return response.result;
         });
     }
     getActivities(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            let response = yield this.rest.get(`/projects/RED/repos/redbox-spa/pull-requests/${id}/activities?fromType=comment`);
+            let response = yield this.rest.get(`/${this.repository}/pull-requests/${id}/activities?fromType=comment`);
+            httpUtility_1.HttpUtility.validateRestResponse(response);
             return response.result;
         });
     }
     getMergeStatus(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            let response = yield this.rest.get(`/projects/RED/repos/redbox-spa/pull-requests/${id}/merge`);
+            let response = yield this.rest.get(`/${this.repository}/pull-requests/${id}/merge`);
+            httpUtility_1.HttpUtility.validateRestResponse(response);
             return response.result;
         });
     }
@@ -71,14 +76,14 @@ class BitBucket {
     }
     mergePr(id, version) {
         return __awaiter(this, void 0, void 0, function* () {
-            let response = yield this.http.post(`${this.baseUrl}/projects/RED/repos/redbox-spa/pull-requests/${id}/merge?version=${version}`, '', postHeaders);
-            httpUtility_1.HttpUtility.validatePostResponse(response);
+            let response = yield this.http.post(`${this.baseUrl}/${this.repository}/pull-requests/${id}/merge?version=${version}`, '', postHeaders);
+            httpUtility_1.HttpUtility.validateHttpResponse(response);
         });
     }
     postComment(id, comment) {
         return __awaiter(this, void 0, void 0, function* () {
-            let response = yield this.http.post(`${this.baseUrl}/projects/RED/repos/redbox-spa/pull-requests/${id}/comments`, JSON.stringify({ text: comment }), postHeaders);
-            httpUtility_1.HttpUtility.validatePostResponse(response);
+            let response = yield this.http.post(`${this.baseUrl}/${this.repository}/pull-requests/${id}/comments`, JSON.stringify({ text: comment }), postHeaders);
+            httpUtility_1.HttpUtility.validateHttpResponse(response);
         });
     }
     updateCacheAndReturnDiffs(composites) {
@@ -148,12 +153,24 @@ class BitBucket {
                     changes.forEach((change) => __awaiter(this, void 0, void 0, function* () {
                         change.composite.threadId = yield this.flowdock.postChange(change);
                     }));
+                    this.lastError = null;
                 }
                 catch (ex) {
-                    console.log('ERROR', ex);
-                    if (ex.statusCode == '401') {
-                        yield this.flowdock.postError('Autobit stopped with ERROR ' + ex.statusCode);
-                        process.exit(ex.statusCode);
+                    let exAsString = ex.toString();
+                    console.log('ERROR', exAsString);
+                    //don't repeat the same error over and over in the flow
+                    if (this.lastError != exAsString) {
+                        yield this.flowdock.postError('Autobit ERROR ' + exAsString);
+                        //check for 401 - we don't want to lock an account
+                        let matches = exAsString.match(/\(([^)]+)\)/);
+                        if (matches.length > 0) {
+                            let statusCode = matches[1];
+                            if (ex == '401') {
+                                yield this.flowdock.postError('Autobit stopped with ERROR ' + ex.statusCode);
+                                process.exit(ex.statusCode);
+                            }
+                        }
+                        this.lastError = exAsString;
                     }
                 }
                 finally {
