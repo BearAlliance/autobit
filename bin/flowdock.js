@@ -85,9 +85,9 @@ class Flowdock {
             }
             if (composite.composite.needWorks) {
                 fields.push({ label: 'Needs work', emoji: 'exclamation' });
-                if (composite.composite.canMerge) {
-                    fields.push({ label: 'Can merge', emoji: 'white_check_mark' });
-                }
+            }
+            if (composite.composite.canMerge) {
+                fields.push({ label: 'Can merge', emoji: 'white_check_mark' });
             }
         }
         let line3 = this.createFieldLine(fields);

@@ -80,8 +80,8 @@ export class Flowdock {
       if (composite.composite.openTasks) { fields.push({ label: 'Open tasks', emoji: 'o', value: composite.composite.openTasks }) }
       if (composite.composite.needWorks) {
         fields.push({ label: 'Needs work', emoji: 'exclamation' })
-        if (composite.composite.canMerge) { fields.push({ label: 'Can merge', emoji: 'white_check_mark' }) }
       }
+      if (composite.composite.canMerge) { fields.push({ label: 'Can merge', emoji: 'white_check_mark' }) }
     }
     let line3 = this.createFieldLine(fields);
     return `${line1} \r\n${line2} \r\n${line3}`;
