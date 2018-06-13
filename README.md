@@ -11,11 +11,15 @@ Also, we were getting lots of bitbucket emails, and some of us stopped looking a
 ## Parameters
 
 - username - you have to log in with your credentials.  you can pass your username here (you will always be prompted for your password)
-- branch - the branch you want to poll (ex. refs/heads/foo/bar)
-- flowdockToken - the, well, token you created for the flow to which you want messages to go
+- branch - the branch you want to poll (ex. refs/heads/foo/bar) - can be multiple branches (ex. refs/heads/foo/bar refs/heads/bam/baz)
+- flowdockToken - the api token to use to authenticate to flowdock
 - bitbucketBaseUrl - the base url to your bitbucket instance (ex. https://bitbucket.foo.com/rest/api/1.0)
 - proxyBypass - addresses you don't want going through whatever proxy you have (i have a no_proxy export, but it doesn't seem to get honored by the library i'm using) (ex. foo.com)
 - proxyUrl - the url to your proxy, if any
+- flowName - the name of the flow to post to (ex. 'Myflow for automation')
+- repository - the repository part of the path, (ex. projects/foo/repos/bar)
+- intervalSeconds - the number of seconds between polling (defaults to 10)
+- flowdockUsername - the name displayed for flowdock automation messages (defaults to autobit)
 
 ## Installation
 
@@ -23,7 +27,7 @@ Install autobit with ```npm i -g autobit```
 
 ## Usage
 
-Run autobit from the terminal, ex. ```autobit -u myusername -b refs/heads/foo/bar -f 2asdfasff232234234234 --bitbucketBaseUrl https://bitbucket.foo.com```
+Run autobit from the terminal, ex. ```autobit -u myusername -b refs/heads/foo/bar -f 2asdfasff232234234234 --bitbucketBaseUrl https://bitbucket.foo.com -flowName 'My automation' -repository projects/foo/repos/bar```
 
 ## Notes
 
