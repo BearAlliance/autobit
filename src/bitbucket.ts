@@ -120,12 +120,14 @@ export class BitBucket {
 
   async loop() {
     if (!this.loopExecuting) {
+      let currentProcessingStatus: string = 'Starting';
       try {
         console.log('Processing...');
         this.loopExecuting = true;
         let composites = await this.getAllComposites();
 
         for (let composite of composites) {
+          currentProcessingStatus +' / Title: ' + composite.title;
           let activities = await this.getActivities(composite.id);
           BitBucket.updateCompositeFromActivities(composite, activities.values);
 
@@ -155,10 +157,10 @@ export class BitBucket {
         this.lastError = null;
       } catch (ex) {
         let exAsString = ex.toString();
-        console.log('ERROR', exAsString);
+        console.log(`ERROR (${currentProcessingStatus})`, exAsString);
         //don't repeat the same error over and over in the flow
         if (this.lastError != exAsString) {
-          await this.flowdock.postError('Autobit ERROR ' + exAsString);
+          await this.flowdock.postError(`Autobit ERROR (${currentProcessingStatus}) --- ${exAsString}`);
 
           //check for 401 - we don't want to lock an account
           let matches = exAsString.match(/\(([^)]+)\)/);

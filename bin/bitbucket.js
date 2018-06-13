@@ -124,11 +124,13 @@ class BitBucket {
     loop() {
         return __awaiter(this, void 0, void 0, function* () {
             if (!this.loopExecuting) {
+                let currentProcessingStatus = 'Starting';
                 try {
                     console.log('Processing...');
                     this.loopExecuting = true;
                     let composites = yield this.getAllComposites();
                     for (let composite of composites) {
+                        currentProcessingStatus + ' / Title: ' + composite.title;
                         let activities = yield this.getActivities(composite.id);
                         BitBucket.updateCompositeFromActivities(composite, activities.values);
                         if (composite.sendMergeRequestNotification) {
@@ -157,10 +159,10 @@ class BitBucket {
                 }
                 catch (ex) {
                     let exAsString = ex.toString();
-                    console.log('ERROR', exAsString);
+                    console.log(`ERROR (${currentProcessingStatus})`, exAsString);
                     //don't repeat the same error over and over in the flow
                     if (this.lastError != exAsString) {
-                        yield this.flowdock.postError('Autobit ERROR ' + exAsString);
+                        yield this.flowdock.postError(`Autobit ERROR (${currentProcessingStatus}) --- ${exAsString}`);
                         //check for 401 - we don't want to lock an account
                         let matches = exAsString.match(/\(([^)]+)\)/);
                         if (matches.length > 0) {
