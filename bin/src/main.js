@@ -22,14 +22,15 @@ const optionDefinitions = [
     { name: 'intervalSeconds', type: Number, defaultValue: 10 },
     { name: 'flowdockUsername', type: String, defaultValue: 'autobit' },
     { name: 'flowName', type: String },
-    { name: 'repository', type: String }
+    { name: 'repository', type: String },
+    { name: 'password', alias: 'p', type: String }
 ];
 const commandLineArgs = require('command-line-args');
 const options = commandLineArgs(optionDefinitions);
 class Main {
     start() {
         Promise.resolve(options.username || prompt('Enter your username: ')).then((username) => {
-            prompt('Enter your password: ', { method: 'hide' }).then((password) => {
+            prompt(options.password || 'Enter your password: ', { method: 'hide' }).then((password) => {
                 let fd = new flowdock_1.Flowdock(options.flowdockToken, options.flowdockUsername, options.flowName);
                 fd.initializeFlowdock().then(() => __awaiter(this, void 0, void 0, function* () {
                     let bb = new bitbucket_1.BitBucket(username, password, options.branch, options.repository, options.bitbucketBaseUrl, options.proxyBypass, options.proxyUrl, fd);
