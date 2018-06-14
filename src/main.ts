@@ -24,7 +24,7 @@ const options = commandLineArgs(optionDefinitions);
 class Main {
   start() {
     Promise.resolve(options.username || prompt('Enter your username: ')).then((username) => {
-      prompt(options.password || 'Enter your password: ', { method: 'hide' }).then((password) => {
+      Promise.resolve(options.password || prompt('Enter your password: ', { method: 'hide' })).then((password) => {
         let fd = new Flowdock(options.flowdockToken, options.flowdockUsername, options.flowName);
         fd.initializeFlowdock().then(async () => {
           let bb = new BitBucket(username, password, options.branch, options.repository, options.bitbucketBaseUrl, options.proxyBypass, options.proxyUrl, fd);
