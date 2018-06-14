@@ -10,7 +10,8 @@ Also, we were getting lots of bitbucket emails, and some of us stopped looking a
 
 ## Parameters
 
-- username - you have to log in with your credentials.  you can pass your username here (you will always be prompted for your password)
+- username - you have to log in with your credentials to authenticate against bitbucket.  you can pass your username here
+- password - bitbucket password - if not specified you'll be prompted
 - branch - the branch you want to poll (ex. refs/heads/foo/bar) - can be multiple branches (ex. refs/heads/foo/bar refs/heads/bam/baz)
 - flowdockToken - the api token to use to authenticate to flowdock
 - bitbucketBaseUrl - the base url to your bitbucket instance (ex. https://bitbucket.foo.com/rest/api/1.0)
