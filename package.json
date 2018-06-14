@@ -4,7 +4,7 @@
   "bin": {
     "autobit": "./bin/src/main.js"
   },
-  "version": "1.0.21",
+  "version": "1.0.22",
   "description": "bitbucket automation",
   "main": "main.js",
   "scripts": {
