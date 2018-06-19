@@ -77,6 +77,10 @@ class BitBucket {
     mergePr(id, version) {
         return __awaiter(this, void 0, void 0, function* () {
             let response = yield this.http.post(`${this.baseUrl}/${this.repository}/pull-requests/${id}/merge?version=${version}`, '', postHeaders);
+            let body = JSON.parse(yield response.readBody());
+            if (body.errors && body.errors.length > 0 && body.errors[0].message) {
+                throw body.errors[0].message;
+            }
             httpUtility_1.HttpUtility.validateHttpResponse(response);
         });
     }
@@ -141,12 +145,27 @@ class BitBucket {
                         if (composite.canMerge) {
                             if (composite.mergeRequested) {
                                 let requestMessage = `Automerge in progess for ${composite.title} by ${composite.lastAutobitActionRequestedBy}`;
-                                let completedMessage = `Automerge completed for ${composite.title}`;
+                                let completedMessage = `Automerge completed for ${this.flowdock.createPRNameLink(composite)}`;
+                                let errorMessage = `Automerge failure canceled auto-merge for ${this.flowdock.createPRNameLink(composite)}`;
                                 yield this.flowdock.postInfo(requestMessage);
                                 yield this.postComment(composite.id, requestMessage);
-                                yield this.mergePr(composite.id, composite.version);
-                                yield this.postComment(composite.id, completedMessage);
-                                yield this.flowdock.postInfo(completedMessage);
+                                let mergeSucceeded = false;
+                                try {
+                                    yield this.mergePr(composite.id, composite.version);
+                                    mergeSucceeded = true;
+                                }
+                                catch (ex) {
+                                    errorMessage += `\r\n\`\`\`${ex}\`\`\``;
+                                }
+                                if (mergeSucceeded) {
+                                    yield this.postComment(composite.id, completedMessage);
+                                    yield this.flowdock.postInfo(completedMessage);
+                                }
+                                else {
+                                    yield this.postComment(composite.id, errorMessage);
+                                    yield this.postComment(composite.id, 'cancel');
+                                    yield this.flowdock.postInfo(errorMessage);
+                                }
                             }
                         }
                     }
@@ -199,7 +218,7 @@ class BitBucket {
         composite.needWorks = pr.reviewers.filter(reviewer => reviewer.status === 'NEEDS_WORK').length;
         composite.openTasks = pr.properties.openTaskCount;
         composite.canMerge = merge.canMerge;
-        composite.isConflicted = pr.properties.mergeResult.outcome === 'CONFLICTED';
+        composite.isConflicted = pr.properties.mergeResult && pr.properties.mergeResult.outcome === 'CONFLICTED';
         composite.link = pr.links.self.length > 0 ? pr.links.self[0].href : '';
         let existingCachedComposite = this.cachedComposites.find(cachedComposite => cachedComposite.id === composite.id);
         //carry over the properties that need to persist across composite retrievals

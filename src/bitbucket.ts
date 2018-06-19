@@ -72,6 +72,10 @@ export class BitBucket {
 
   async mergePr(id: number, version: number) {
     let response = await this.http.post(`${this.baseUrl}/${this.repository}/pull-requests/${id}/merge?version=${version}`, '', postHeaders);
+    let body = JSON.parse(await response.readBody());
+    if (body.errors && body.errors.length > 0 && body.errors[0].message) {
+      throw body.errors[0].message;
+    }
     HttpUtility.validateHttpResponse(response);
   }
 
@@ -127,7 +131,7 @@ export class BitBucket {
         let composites = await this.getAllComposites();
 
         for (let composite of composites) {
-          currentProcessingStatus +' / Title: ' + composite.title;
+          currentProcessingStatus + ' / Title: ' + composite.title;
           let activities = await this.getActivities(composite.id);
           BitBucket.updateCompositeFromActivities(composite, activities.values);
 
@@ -140,12 +144,25 @@ export class BitBucket {
           if (composite.canMerge) {
             if (composite.mergeRequested) {
               let requestMessage = `Automerge in progess for ${composite.title} by ${composite.lastAutobitActionRequestedBy}`;
-              let completedMessage = `Automerge completed for ${composite.title}`;
+              let completedMessage = `Automerge completed for ${this.flowdock.createPRNameLink(composite)}`;
+              let errorMessage = `Automerge failure canceled auto-merge for ${this.flowdock.createPRNameLink(composite)}`;
               await this.flowdock.postInfo(requestMessage);
               await this.postComment(composite.id, requestMessage);
-              await this.mergePr(composite.id, composite.version);
-              await this.postComment(composite.id, completedMessage);
-              await this.flowdock.postInfo(completedMessage);
+              let mergeSucceeded = false;
+              try {
+                await this.mergePr(composite.id, composite.version);
+                mergeSucceeded = true;
+              } catch (ex) {
+                errorMessage += `\r\n\`\`\`${ex}\`\`\``;
+              }
+              if (mergeSucceeded) {
+                await this.postComment(composite.id, completedMessage);
+                await this.flowdock.postInfo(completedMessage);
+              } else {
+                await this.postComment(composite.id, errorMessage);
+                await this.postComment(composite.id, 'cancel');
+                await this.flowdock.postInfo(errorMessage);
+              }
             }
           }
         };
@@ -196,7 +213,7 @@ export class BitBucket {
     composite.needWorks = pr.reviewers.filter(reviewer => reviewer.status === 'NEEDS_WORK').length;
     composite.openTasks = pr.properties.openTaskCount;
     composite.canMerge = merge.canMerge;
-    composite.isConflicted = pr.properties.mergeResult.outcome === 'CONFLICTED';
+    composite.isConflicted = pr.properties.mergeResult && pr.properties.mergeResult.outcome === 'CONFLICTED';
     composite.link = pr.links.self.length > 0 ? pr.links.self[0].href : '';
 
     let existingCachedComposite = this.cachedComposites.find(cachedComposite => cachedComposite.id === composite.id);
