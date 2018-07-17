@@ -158,7 +158,7 @@ export class BitBucket {
               } catch (ex) {
                 errorMessage += `\r\n\`\`\`${ex}\`\`\``;
                 if (canRetry) {
-                  errorMessage += `\r\nAutobit will retry ${MaxMergeRetries - composite.mergeRetries} more times`;
+                  errorMessage += `\r\nAutobit will retry ${MaxMergeRetries - composite.mergeRetries} more time(s)`;
                 }
                 composite.mergeRetries++;
               }
