@@ -147,7 +147,7 @@ export class BitBucket {
             if (composite.mergeRequested) {
               let requestMessage = `Automerge in progess for ${composite.title} by ${composite.lastAutobitActionRequestedBy}`;
               let completedMessage = `Automerge completed for ${this.flowdock.createPRNameLink(composite)}`;
-              let errorMessage = `Automerge failure canceled auto-merge for ${this.flowdock.createPRNameLink(composite)}`;
+              let errorMessage = `Automerge failure with auto-merge for ${this.flowdock.createPRNameLink(composite)}`;
               await this.flowdock.postInfo(requestMessage);
               await this.postComment(composite.id, requestMessage);
               let mergeSucceeded = false;
@@ -159,6 +159,8 @@ export class BitBucket {
                 errorMessage += `\r\n\`\`\`${ex}\`\`\``;
                 if (canRetry) {
                   errorMessage += `\r\nAutobit will retry ${MaxMergeRetries - composite.mergeRetries} more time(s)`;
+                } else {
+                  errorMessage += `\r\nCanceled`;
                 }
                 composite.mergeRetries++;
               }
