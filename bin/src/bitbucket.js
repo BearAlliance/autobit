@@ -252,12 +252,13 @@ class BitBucket {
         for (let i = 0; i < activities.length - 1; i++) {
             let activity = activities[i];
             if (activity.comment) {
-                if (activity.comment.text === 'cancel') {
+                let text = (activity.comment.text || '').replace('\n', '').trim();
+                if (text === 'cancel') {
                     composite.mergeRequested = false;
                     commentFound = activity.comment;
                     break;
                 }
-                else if (activity.comment.text === 'mab') {
+                else if (text === 'mab') {
                     composite.mergeRequested = true;
                     commentFound = activity.comment;
                     break;
