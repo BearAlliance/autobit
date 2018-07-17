@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 class PrComposite {
     constructor() {
+        this.mergeRetries = 0;
         this.mergeRequested = false;
     }
 }

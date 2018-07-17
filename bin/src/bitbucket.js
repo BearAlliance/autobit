@@ -13,6 +13,7 @@ const hm = require("typed-rest-client/Handlers");
 const ht = require("typed-rest-client/HttpClient");
 const httpUtility_1 = require("./httpUtility");
 const prComposite_1 = require("./types/prComposite");
+const MaxMergeRetries = 3;
 var ChangeType;
 (function (ChangeType) {
     ChangeType[ChangeType["Added"] = 0] = "Added";
@@ -150,12 +151,17 @@ class BitBucket {
                                 yield this.flowdock.postInfo(requestMessage);
                                 yield this.postComment(composite.id, requestMessage);
                                 let mergeSucceeded = false;
+                                let canRetry = composite.mergeRetries < MaxMergeRetries;
                                 try {
                                     yield this.mergePr(composite.id, composite.version);
                                     mergeSucceeded = true;
                                 }
                                 catch (ex) {
                                     errorMessage += `\r\n\`\`\`${ex}\`\`\``;
+                                    if (canRetry) {
+                                        errorMessage += `\r\nAutobit will retry ${MaxMergeRetries - composite.mergeRetries} more times`;
+                                    }
+                                    composite.mergeRetries++;
                                 }
                                 if (mergeSucceeded) {
                                     yield this.postComment(composite.id, completedMessage);
@@ -163,7 +169,9 @@ class BitBucket {
                                 }
                                 else {
                                     yield this.postComment(composite.id, errorMessage);
-                                    yield this.postComment(composite.id, 'cancel');
+                                    if (!canRetry) {
+                                        yield this.postComment(composite.id, 'cancel');
+                                    }
                                     yield this.flowdock.postInfo(errorMessage);
                                 }
                             }
@@ -223,6 +231,12 @@ class BitBucket {
         let existingCachedComposite = this.cachedComposites.find(cachedComposite => cachedComposite.id === composite.id);
         //carry over the properties that need to persist across composite retrievals
         if (existingCachedComposite) {
+            if (!composite.canMerge) {
+                composite.mergeRetries = 0;
+            }
+            else {
+                composite.mergeRetries = existingCachedComposite.mergeRetries;
+            }
             composite.mergeRequested = existingCachedComposite.mergeRequested;
             composite.lastAutobitActionRequestedBy = existingCachedComposite.lastAutobitActionRequestedBy;
             composite.threadId = existingCachedComposite.threadId;
