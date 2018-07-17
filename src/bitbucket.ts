@@ -10,6 +10,8 @@ import { HttpUtility } from './httpUtility';
 import { PrComposite } from './types/prComposite';
 import { Flowdock } from './flowdock';
 
+const MaxMergeRetries = 3;
+
 export enum ChangeType {
   Added,
   Changed,
@@ -149,18 +151,25 @@ export class BitBucket {
               await this.flowdock.postInfo(requestMessage);
               await this.postComment(composite.id, requestMessage);
               let mergeSucceeded = false;
+              let canRetry = composite.mergeRetries < MaxMergeRetries;
               try {
                 await this.mergePr(composite.id, composite.version);
                 mergeSucceeded = true;
               } catch (ex) {
                 errorMessage += `\r\n\`\`\`${ex}\`\`\``;
+                if (canRetry) {
+                  errorMessage += `\r\nAutobit will retry ${MaxMergeRetries - composite.mergeRetries} more times`;
+                }
+                composite.mergeRetries++;
               }
               if (mergeSucceeded) {
                 await this.postComment(composite.id, completedMessage);
                 await this.flowdock.postInfo(completedMessage);
               } else {
                 await this.postComment(composite.id, errorMessage);
-                await this.postComment(composite.id, 'cancel');
+                if (!canRetry) {
+                  await this.postComment(composite.id, 'cancel');
+                }
                 await this.flowdock.postInfo(errorMessage);
               }
             }
@@ -219,6 +228,12 @@ export class BitBucket {
     let existingCachedComposite = this.cachedComposites.find(cachedComposite => cachedComposite.id === composite.id);
     //carry over the properties that need to persist across composite retrievals
     if (existingCachedComposite) {
+      if (!composite.canMerge) {
+        composite.mergeRetries = 0;
+      } else {
+        composite.mergeRetries = existingCachedComposite.mergeRetries;
+      }
+
       composite.mergeRequested = existingCachedComposite.mergeRequested;
       composite.lastAutobitActionRequestedBy = existingCachedComposite.lastAutobitActionRequestedBy;
       composite.threadId = existingCachedComposite.threadId;
