@@ -70,7 +70,7 @@ class Flowdock {
         });
     }
     formatForFlowdock(composite) {
-        let line1 = `**${composite.changeAsString}** : *${this.createPRNameLink(composite.composite)}*`;
+        let line1 = `**${composite.changeAsString}** : *${this.createPRNameLink(composite.composite)}* **on ${composite.composite.toBranch.displayId}**`;
         let line2 = `${composite.composite.author} / Created on ${composite.composite.createdDate.toLocaleString()}`;
         let fields = [];
         if (composite.changeType !== bitbucket_1.ChangeType.Deleted) {

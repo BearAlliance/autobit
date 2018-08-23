@@ -1,5 +1,9 @@
+import { FromRef } from "./prs";
+
 export class PrComposite {
   version: number;
+  fromBranch: FromRef;
+  toBranch: FromRef;
   id: number;
   title: string;
   createdDate: Date;

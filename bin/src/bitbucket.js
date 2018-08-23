@@ -67,7 +67,7 @@ class BitBucket {
     getFilteredPrs() {
         return __awaiter(this, void 0, void 0, function* () {
             let prs = yield this.getPrs();
-            return prs.values.filter((pr) => this.branches.indexOf(pr.toRef.id) != -1);
+            return prs.values.filter((pr) => this.branches.find(branch => RegExp(`^${branch}`, 'i').test(pr.toRef.id)));
         });
     }
     getAllComposites() {
@@ -175,7 +175,9 @@ class BitBucket {
                                     if (!canRetry) {
                                         yield this.postComment(composite.id, 'cancel');
                                     }
-                                    yield this.flowdock.postInfo(errorMessage);
+                                    if (composite.mergeRetries > 1) {
+                                        yield this.flowdock.postInfo(errorMessage);
+                                    }
                                 }
                             }
                         }
@@ -220,6 +222,8 @@ class BitBucket {
     createComposite(pr, merge) {
         let composite = new prComposite_1.PrComposite();
         composite.version = pr.version;
+        composite.fromBranch = pr.fromRef;
+        composite.toBranch = pr.toRef;
         composite.id = pr.id;
         composite.title = pr.title;
         composite.author = pr.author.user.displayName;

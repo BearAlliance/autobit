@@ -65,7 +65,7 @@ export class BitBucket {
 
   async getFilteredPrs() {
     let prs = await this.getPrs();
-    return prs.values.filter((pr) => this.branches.indexOf(pr.toRef.id) != -1);
+    return prs.values.filter((pr) => this.branches.find(branch => RegExp(`^${branch}`, 'i').test(pr.toRef.id)));
   }
 
   async getAllComposites() {
@@ -172,7 +172,9 @@ export class BitBucket {
                 if (!canRetry) {
                   await this.postComment(composite.id, 'cancel');
                 }
-                await this.flowdock.postInfo(errorMessage);
+                if (composite.mergeRetries > 1) {
+                  await this.flowdock.postInfo(errorMessage);
+                }
               }
             }
           }
@@ -215,6 +217,8 @@ export class BitBucket {
   createComposite(pr: prs.Value, merge: MergeStatus) {
     let composite = new PrComposite();
     composite.version = pr.version;
+    composite.fromBranch = pr.fromRef;
+    composite.toBranch = pr.toRef;
     composite.id = pr.id;
     composite.title = pr.title;
     composite.author = pr.author.user.displayName;
