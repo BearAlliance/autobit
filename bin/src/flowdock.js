@@ -174,7 +174,7 @@ class Flowdock {
             // email = 'john.west@adp.com';
             // const whitelist = ['john.west@adp.com', 'matthew.warrens@adp.com', 'Ethan.Washbourne@adp.com', 'Matthew.Wilkey@ADP.com', 'ashwin.patha@adp.com']
             // if (whitelist.find(x => x.toUpperCase() === email.toUpperCase()) ) {
-            message = message + '\r\n*This message is auto-generated.  Post to the [Autobit users](https://www.flowdock.com/app/adpes/autobit-users) flow if you have questions.*';
+            message = message + '\r\n*This message was auto-generated.  Post to the [Autobit users](https://www.flowdock.com/app/adpes/autobit-users) flow if you have questions.*';
             let content = { event: "message", content: message };
             let headers = {
                 "Authorization": this.base64Authorization,
