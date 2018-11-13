@@ -20,6 +20,16 @@ var ChangeType;
     ChangeType[ChangeType["Changed"] = 1] = "Changed";
     ChangeType[ChangeType["Deleted"] = 2] = "Deleted";
 })(ChangeType = exports.ChangeType || (exports.ChangeType = {}));
+exports.BuildVetoSummaryMessage = 'Not all required builds are successful yet';
+var BuildStatus;
+(function (BuildStatus) {
+    BuildStatus["NotSpecified"] = "The build status isn\t specified";
+    BuildStatus["InProgress"] = "You cannot merge this pull request while it has in-progress builds.";
+    BuildStatus["Failed"] = "You cannot merge this pull request while it has failed builds.";
+    BuildStatus["NeedMinimumOfOne"] = "You need a minimum of one successful build before this pull request can be merged.";
+    BuildStatus["Successful"] = "Successful";
+    BuildStatus["Other"] = "Build status not recognized";
+})(BuildStatus = exports.BuildStatus || (exports.BuildStatus = {}));
 class ChangeComposite {
 }
 exports.ChangeComposite = ChangeComposite;
@@ -104,14 +114,20 @@ class BitBucket {
                 this.cachedComposites.splice(this.cachedComposites.indexOf(existingCachedComposite), 1);
                 this.cachedComposites.push(composite);
                 //see if anything we care about has changed
+                const change = { composite, changeType: ChangeType.Changed, changeAsString: ChangeType[ChangeType.Changed] };
+                if (existingCachedComposite.lastCommit && composite.lastCommit !== existingCachedComposite.lastCommit) {
+                    change.oneTimeChangeMessage = 'New commit added';
+                }
                 if (composite.title !== existingCachedComposite.title ||
                     composite.approvals !== existingCachedComposite.approvals ||
                     composite.needWorks !== existingCachedComposite.needWorks ||
                     composite.openTasks !== existingCachedComposite.openTasks ||
                     composite.canMerge !== existingCachedComposite.canMerge ||
-                    composite.isConflicted !== existingCachedComposite.isConflicted) {
+                    composite.isConflicted !== existingCachedComposite.isConflicted ||
+                    composite.buildStatus !== existingCachedComposite.buildStatus ||
+                    change.oneTimeChangeMessage) {
                     //if so, push it into the change array
-                    changes.push({ composite, changeType: ChangeType.Changed, changeAsString: ChangeType[ChangeType.Changed] });
+                    changes.push(change);
                 }
                 ;
             }
@@ -186,6 +202,7 @@ class BitBucket {
                     let changes = this.updateCacheAndReturnDiffs(composites);
                     changes.forEach((change) => __awaiter(this, void 0, void 0, function* () {
                         change.composite.threadId = yield this.flowdock.postChange(change);
+                        change.oneTimeChangeMessage = null;
                     }));
                     this.lastError = null;
                 }
@@ -227,14 +244,17 @@ class BitBucket {
         composite.id = pr.id;
         composite.title = pr.title;
         composite.author = pr.author.user.displayName;
+        composite.authorEmail = pr.author.user.emailAddress;
         composite.createdDate = new Date(pr.createdDate);
         composite.updatedDate = new Date(pr.updatedDate);
         composite.approvals = pr.reviewers.filter(reviewer => reviewer.status === 'APPROVED').length;
         composite.needWorks = pr.reviewers.filter(reviewer => reviewer.status === 'NEEDS_WORK').length;
         composite.openTasks = pr.properties.openTaskCount;
         composite.canMerge = merge.canMerge;
+        composite.lastCommit = pr.fromRef ? pr.fromRef.latestCommit : null;
         composite.isConflicted = pr.properties.mergeResult && pr.properties.mergeResult.outcome === 'CONFLICTED';
         composite.link = pr.links.self.length > 0 ? pr.links.self[0].href : '';
+        this.setBuildStatus(composite, merge);
         let existingCachedComposite = this.cachedComposites.find(cachedComposite => cachedComposite.id === composite.id);
         //carry over the properties that need to persist across composite retrievals
         if (existingCachedComposite) {
@@ -249,6 +269,29 @@ class BitBucket {
             composite.threadId = existingCachedComposite.threadId;
         }
         return composite;
+    }
+    setBuildStatus(composite, merge) {
+        if (!merge.vetoes) {
+            composite.buildStatus = BuildStatus.NotSpecified;
+            return;
+        }
+        const buildVetoMessage = merge.vetoes.find(x => x.summaryMessage === exports.BuildVetoSummaryMessage);
+        if (!buildVetoMessage || !buildVetoMessage.detailedMessage) {
+            composite.buildStatus = BuildStatus.NotSpecified;
+            return;
+        }
+        if (buildVetoMessage.detailedMessage === BuildStatus.InProgress) {
+            composite.buildStatus = BuildStatus.InProgress;
+        }
+        else if (buildVetoMessage.detailedMessage === BuildStatus.Failed) {
+            composite.buildStatus = BuildStatus.Failed;
+        }
+        else if (buildVetoMessage.detailedMessage === BuildStatus.NeedMinimumOfOne) {
+            composite.buildStatus = BuildStatus.NeedMinimumOfOne;
+        }
+        else {
+            composite.buildStatus = BuildStatus.Other;
+        }
     }
     static updateCompositeFromActivities(composite, activities) {
         let commentFound = null;

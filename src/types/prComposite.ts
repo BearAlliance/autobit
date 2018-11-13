@@ -1,4 +1,5 @@
 import { FromRef } from "./prs";
+import { BuildStatus } from "../bitbucket";
 
 export class PrComposite {
   version: number;
@@ -9,6 +10,7 @@ export class PrComposite {
   createdDate: Date;
   updatedDate: Date;
   author: string;
+  authorEmail: string;
   openTasks: number;
   approvals: number;
   needWorks: number;
@@ -20,4 +22,6 @@ export class PrComposite {
   lastAutobitActionRequestedBy: string;
   sendMergeRequestNotification: boolean;
   threadId: string;
+  lastCommit: string;
+  buildStatus: BuildStatus;
 }

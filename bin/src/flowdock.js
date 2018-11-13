@@ -27,6 +27,7 @@ class Flowdock {
         return __awaiter(this, void 0, void 0, function* () {
             this.session = new Session(this.token);
             yield this.getFlowId(this.flowName);
+            yield this.getUsers();
         });
     }
     getFlowId(flowName) {
@@ -50,7 +51,7 @@ class Flowdock {
     }
     postChange(composite) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield this.postContent(this.formatForFlowdock(composite), composite.composite.threadId);
+            return yield this.postContent(this.formatForFlowdock(composite), composite.composite.threadId, composite.composite.authorEmail);
         });
     }
     postError(error, composite) {
@@ -65,7 +66,7 @@ class Flowdock {
     }
     postGeneralMessage(emoji, msg, composite) {
         return __awaiter(this, void 0, void 0, function* () {
-            let callThreadId = yield this.postContent(`:${emoji}: ${msg}`, composite ? composite.threadId : this.generalThreadId);
+            let callThreadId = yield this.postContent(`:${emoji}: ${msg}`, composite ? composite.threadId : this.generalThreadId, composite ? composite.authorEmail : null);
             composite ? (composite.threadId = callThreadId) : (this.generalThreadId = callThreadId);
         });
     }
@@ -86,12 +87,40 @@ class Flowdock {
             if (composite.composite.needWorks) {
                 fields.push({ label: 'Needs work', emoji: 'exclamation' });
             }
+            if (composite.oneTimeChangeMessage) {
+                fields.push({ label: composite.oneTimeChangeMessage, emoji: 'eight_pointed_black_star' });
+            }
             if (composite.composite.canMerge) {
                 fields.push({ label: 'Can merge', emoji: 'white_check_mark' });
             }
+            ;
+            this.createBuildStatusField(composite, fields);
         }
         let line3 = this.createFieldLine(fields);
         return `${line1} \r\n${line2} \r\n${line3}`;
+    }
+    createBuildStatusField(composite, fields) {
+        if (composite.composite.buildStatus !== bitbucket_1.BuildStatus.Successful && composite.composite.buildStatus !== bitbucket_1.BuildStatus.NotSpecified) {
+            let msg = null;
+            let emoji = '';
+            switch (composite.composite.buildStatus) {
+                case bitbucket_1.BuildStatus.NeedMinimumOfOne:
+                    msg = 'Build not started';
+                    emoji = 'wavy_dash';
+                    break;
+                case bitbucket_1.BuildStatus.Failed:
+                    msg = 'Build failed';
+                    emoji = 'no_entry';
+                    break;
+                case bitbucket_1.BuildStatus.InProgress:
+                    msg = 'Build in progress';
+                    emoji = 'clock1030';
+                    break;
+            }
+            if (msg) {
+                fields.push({ label: msg, emoji: emoji });
+            }
+        }
     }
     createPRNameLink(composite) {
         return `[${composite.title}](${composite.link})`;
@@ -111,7 +140,7 @@ class Flowdock {
         return line;
     }
     //use our own post content because the flowdock library doesn't support custom content
-    postContent(message, threadId) {
+    postContent(message, threadId, authorEmail) {
         return __awaiter(this, void 0, void 0, function* () {
             let content = { flow: this.flowId, content: message, external_user_name: "Autobit", event: "message", thread_id: threadId };
             let headers = {
@@ -119,10 +148,45 @@ class Flowdock {
                 "content-type": "application/json",
                 "X-flowdock-wait-for-message": "true"
             };
+            if (authorEmail) {
+                this.sendMessageToUser(authorEmail, message);
+            }
             let response = yield this.http.post(`https://api.flowdock.com/messages`, JSON.stringify(content), headers);
             httpUtility_1.HttpUtility.validateHttpResponse(response);
             let body = JSON.parse(yield response.readBody());
             return body.thread_id;
+        });
+    }
+    getUsers() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let headers = {
+                "Authorization": this.base64Authorization,
+                "content-type": "application/json",
+                "X-flowdock-wait-for-message": "true"
+            };
+            let response = yield this.http.get(`https://api.flowdock.com/users`, headers);
+            httpUtility_1.HttpUtility.validateHttpResponse(response);
+            this.flowDockUsers = JSON.parse(yield response.readBody());
+        });
+    }
+    sendMessageToUser(email, message) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const whitelist = ['john.west@adp.com', 'matthew.warrens@adp.com', 'Ethan.Washbourne@adp.com', 'Matthew.Wilkey@ADP.com', 'ashwin.patha@adp.com'];
+            if (whitelist.find(x => x.toUpperCase() === email.toUpperCase())) {
+                let content = { event: "message", content: message };
+                let headers = {
+                    "Authorization": this.base64Authorization,
+                    "content-type": "application/json",
+                    "X-flowdock-wait-for-message": "true"
+                };
+                const foundUser = this.flowDockUsers.find(x => x.email.toLowerCase() === email.toLowerCase());
+                // do nothing if user not found
+                if (foundUser) {
+                    const id = foundUser.id;
+                    let response = yield this.http.post(`https://api.flowdock.com/private/${id}/messages`, JSON.stringify(content), headers);
+                    httpUtility_1.HttpUtility.validateHttpResponse(response);
+                }
+            }
         });
     }
 }
