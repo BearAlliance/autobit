@@ -171,22 +171,24 @@ class Flowdock {
     }
     sendMessageToUser(email, message) {
         return __awaiter(this, void 0, void 0, function* () {
-            const whitelist = ['john.west@adp.com', 'matthew.warrens@adp.com', 'Ethan.Washbourne@adp.com', 'Matthew.Wilkey@ADP.com', 'ashwin.patha@adp.com'];
-            if (whitelist.find(x => x.toUpperCase() === email.toUpperCase())) {
-                let content = { event: "message", content: message };
-                let headers = {
-                    "Authorization": this.base64Authorization,
-                    "content-type": "application/json",
-                    "X-flowdock-wait-for-message": "true"
-                };
-                const foundUser = this.flowDockUsers.find(x => x.email.toLowerCase() === email.toLowerCase());
-                // do nothing if user not found
-                if (foundUser) {
-                    const id = foundUser.id;
-                    let response = yield this.http.post(`https://api.flowdock.com/private/${id}/messages`, JSON.stringify(content), headers);
-                    httpUtility_1.HttpUtility.validateHttpResponse(response);
-                }
+            // email = 'john.west@adp.com';
+            // const whitelist = ['john.west@adp.com', 'matthew.warrens@adp.com', 'Ethan.Washbourne@adp.com', 'Matthew.Wilkey@ADP.com', 'ashwin.patha@adp.com']
+            // if (whitelist.find(x => x.toUpperCase() === email.toUpperCase()) ) {
+            message = message + '\r\n*This message is auto-generated.  Post to the [Autobit users](https://www.flowdock.com/app/adpes/autobit-users) flow if you have questions.*';
+            let content = { event: "message", content: message };
+            let headers = {
+                "Authorization": this.base64Authorization,
+                "content-type": "application/json",
+                "X-flowdock-wait-for-message": "true"
+            };
+            const foundUser = this.flowDockUsers.find(x => x.email.toLowerCase() === email.toLowerCase());
+            // do nothing if user not found
+            if (foundUser) {
+                const id = foundUser.id;
+                let response = yield this.http.post(`https://api.flowdock.com/private/${id}/messages`, JSON.stringify(content), headers);
+                httpUtility_1.HttpUtility.validateHttpResponse(response);
             }
+            // }
         });
     }
 }
