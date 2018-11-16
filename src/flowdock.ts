@@ -91,6 +91,9 @@ export class Flowdock {
       }
       if (composite.composite.canMerge) { fields.push({ label: 'Can merge', emoji: 'white_check_mark' }) };
       this.createBuildStatusField(composite, fields);
+      if (composite.composite.mergeRequested) {
+        fields.push({ label: '', emoji: 'part_alternation_mark' })
+      }
       if (composite.commentMessage) {
         fields.push({ label: composite.commentMessage, emoji: 'envelope' })
       }

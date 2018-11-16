@@ -90,14 +90,17 @@ class Flowdock {
             if (composite.oneTimeChangeMessage) {
                 fields.push({ label: composite.oneTimeChangeMessage, emoji: 'eight_pointed_black_star' });
             }
-            if (composite.commentMessage) {
-                fields.push({ label: composite.commentMessage, emoji: 'envelope' });
-            }
             if (composite.composite.canMerge) {
                 fields.push({ label: 'Can merge', emoji: 'white_check_mark' });
             }
             ;
             this.createBuildStatusField(composite, fields);
+            if (composite.composite.mergeRequested) {
+                fields.push({ label: '', emoji: 'part_alternation_mark' });
+            }
+            if (composite.commentMessage) {
+                fields.push({ label: composite.commentMessage, emoji: 'envelope' });
+            }
         }
         let line3 = this.createFieldLine(fields);
         return `${line1} \r\n${line2} \r\n${line3}`;
