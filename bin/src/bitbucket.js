@@ -20,6 +20,12 @@ var ChangeType;
     ChangeType[ChangeType["Changed"] = 1] = "Changed";
     ChangeType[ChangeType["Deleted"] = 2] = "Deleted";
 })(ChangeType = exports.ChangeType || (exports.ChangeType = {}));
+var CommentKeyword;
+(function (CommentKeyword) {
+    CommentKeyword["Mab"] = "mab";
+    CommentKeyword["Cancel"] = "cancel";
+    CommentKeyword["Notify"] = "notify";
+})(CommentKeyword = exports.CommentKeyword || (exports.CommentKeyword = {}));
 exports.BuildVetoSummaryMessage = 'Not all required builds are successful yet';
 var BuildStatus;
 (function (BuildStatus) {
@@ -119,7 +125,7 @@ class BitBucket {
                     change.oneTimeChangeMessage = 'New commit added';
                 }
                 if (composite.mostRecentCommentDate !== existingCachedComposite.mostRecentCommentDate) {
-                    change.commentMessage = 'New comment(s) added';
+                    change.commentMessage = 'New comment(s) added from ' + composite.newCommentsFrom.join(' and ');
                 }
                 if (composite.title !== existingCachedComposite.title ||
                     composite.approvals !== existingCachedComposite.approvals ||
@@ -251,6 +257,8 @@ class BitBucket {
         composite.title = pr.title;
         composite.author = pr.author.user.displayName;
         composite.authorEmail = pr.author.user.emailAddress;
+        composite.notificationEmails = [];
+        composite.newCommentsFrom = [];
         composite.createdDate = new Date(pr.createdDate);
         composite.updatedDate = new Date(pr.updatedDate);
         composite.approvals = pr.reviewers.filter(reviewer => reviewer.status === 'APPROVED').length;
@@ -301,40 +309,59 @@ class BitBucket {
     }
     setMostRecentCommentDate(composite, activities) {
         let mostRecentCommentDate = 0;
+        let newCommentsFrom = [];
         activities.forEach(activity => {
             if (activity.action === 'COMMENTED') {
-                mostRecentCommentDate = this.findMostRecentCommentDate([activity.comment]);
+                mostRecentCommentDate = this.findMostRecentCommentDate([activity.comment], mostRecentCommentDate, newCommentsFrom);
             }
         });
         composite.mostRecentCommentDate = mostRecentCommentDate;
+        composite.newCommentsFrom = newCommentsFrom;
     }
-    findMostRecentCommentDate(comments, mostRecent = 0) {
+    findMostRecentCommentDate(comments, mostRecent = 0, newCommentsFrom) {
         comments.forEach(comment => {
-            if (comment.createdDate > mostRecent) {
-                mostRecent = comment.createdDate;
+            if (BitBucket.returnCommentKeyword(comment) === null && comment.author.displayName !== 'autobit') {
+                if (comment.createdDate > mostRecent) {
+                    mostRecent = comment.createdDate;
+                    if (newCommentsFrom.indexOf(comment.author.emailAddress) === -1) {
+                        newCommentsFrom.push(comment.author.emailAddress);
+                    }
+                }
             }
             if (comment.comments) {
-                mostRecent = this.findMostRecentCommentDate(comment.comments, mostRecent);
+                mostRecent = this.findMostRecentCommentDate(comment.comments, mostRecent, newCommentsFrom);
             }
         });
         return mostRecent;
+    }
+    static returnCommentKeyword(comment) {
+        if (comment) {
+            const commentText = (comment.text || '').toLowerCase().replace('\n', '').trim();
+            if (Object.values(CommentKeyword).includes(commentText)) {
+                return commentText;
+            }
+        }
+        return null;
     }
     static getActionRequestsFromComments(composite, activities) {
         let commentFound = null;
         let originalMergeRequestedStatus = composite.mergeRequested;
         for (let i = 0; i < activities.length - 1; i++) {
             let activity = activities[i];
-            if (activity.comment) {
-                let text = (activity.comment.text || '').replace('\n', '').trim();
-                if (text === 'cancel') {
-                    composite.mergeRequested = false;
-                    commentFound = activity.comment;
-                    break;
-                }
-                else if (text === 'mab') {
-                    composite.mergeRequested = true;
-                    commentFound = activity.comment;
-                    break;
+            const keyword = BitBucket.returnCommentKeyword(activity.comment);
+            if (keyword === CommentKeyword.Cancel) {
+                composite.mergeRequested = false;
+                commentFound = activity.comment;
+                break;
+            }
+            else if (keyword === CommentKeyword.Mab) {
+                composite.mergeRequested = true;
+                commentFound = activity.comment;
+                break;
+            }
+            else if (keyword === CommentKeyword.Notify) {
+                if (composite.notificationEmails.indexOf(activity.comment.author.emailAddress) === -1) {
+                    composite.notificationEmails.push(activity.comment.author.emailAddress);
                 }
             }
         }

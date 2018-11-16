@@ -51,7 +51,7 @@ class Flowdock {
     }
     postChange(composite) {
         return __awaiter(this, void 0, void 0, function* () {
-            return yield this.postContent(this.formatForFlowdock(composite), composite.composite.threadId, composite.composite.authorEmail);
+            return yield this.postContent(this.formatForFlowdock(composite), composite.composite.threadId, composite.composite.authorEmail, composite.composite.notificationEmails);
         });
     }
     postError(error, composite) {
@@ -66,7 +66,7 @@ class Flowdock {
     }
     postGeneralMessage(emoji, msg, composite) {
         return __awaiter(this, void 0, void 0, function* () {
-            let callThreadId = yield this.postContent(`:${emoji}: ${msg}`, composite ? composite.threadId : this.generalThreadId, composite ? composite.authorEmail : null);
+            let callThreadId = yield this.postContent(`:${emoji}: ${msg}`, composite ? composite.threadId : this.generalThreadId, composite ? composite.authorEmail : null, composite.newCommentsFrom);
             composite ? (composite.threadId = callThreadId) : (this.generalThreadId = callThreadId);
         });
     }
@@ -143,7 +143,7 @@ class Flowdock {
         return line;
     }
     //use our own post content because the flowdock library doesn't support custom content
-    postContent(message, threadId, authorEmail) {
+    postContent(message, threadId, authorEmail, notificationEmails) {
         return __awaiter(this, void 0, void 0, function* () {
             let content = { flow: this.flowId, content: message, external_user_name: "Autobit", event: "message", thread_id: threadId };
             let headers = {
@@ -153,6 +153,9 @@ class Flowdock {
             };
             if (authorEmail) {
                 this.sendMessageToUser(authorEmail, message);
+            }
+            if (notificationEmails) {
+                notificationEmails.forEach(email => this.sendMessageToUser(email, message));
             }
             let response = yield this.http.post(`https://api.flowdock.com/messages`, JSON.stringify(content), headers);
             httpUtility_1.HttpUtility.validateHttpResponse(response);

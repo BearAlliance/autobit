@@ -55,7 +55,8 @@ export class Flowdock {
   }
 
   async postChange(composite: ChangeComposite) {
-    return await this.postContent(this.formatForFlowdock(composite), composite.composite.threadId, composite.composite.authorEmail);
+    return await this.postContent(this.formatForFlowdock(composite), composite.composite.threadId,
+      composite.composite.authorEmail, composite.composite.notificationEmails);
   }
 
   async postError(error: string, composite?: PrComposite) {
@@ -67,7 +68,7 @@ export class Flowdock {
   }
 
   async postGeneralMessage(emoji: string, msg: string, composite: PrComposite) {
-    let callThreadId = await this.postContent(`:${emoji}: ${msg}`, composite ? composite.threadId : this.generalThreadId, composite ? composite.authorEmail : null);
+    let callThreadId = await this.postContent(`:${emoji}: ${msg}`, composite ? composite.threadId : this.generalThreadId, composite ? composite.authorEmail : null, composite.newCommentsFrom);
     composite ? (composite.threadId = callThreadId) : (this.generalThreadId = callThreadId);
   }
 
@@ -88,11 +89,11 @@ export class Flowdock {
       if (composite.oneTimeChangeMessage) {
         fields.push({ label: composite.oneTimeChangeMessage, emoji: 'eight_pointed_black_star' })
       }
+      if (composite.composite.canMerge) { fields.push({ label: 'Can merge', emoji: 'white_check_mark' }) };
+      this.createBuildStatusField(composite, fields);
       if (composite.commentMessage) {
         fields.push({ label: composite.commentMessage, emoji: 'envelope' })
       }
-      if (composite.composite.canMerge) { fields.push({ label: 'Can merge', emoji: 'white_check_mark' }) };
-      this.createBuildStatusField(composite, fields);
     }
     let line3 = this.createFieldLine(fields);
     return `${line1} \r\n${line2} \r\n${line3}`;
@@ -141,7 +142,7 @@ export class Flowdock {
   }
 
   //use our own post content because the flowdock library doesn't support custom content
-  private async postContent(message: string, threadId: string, authorEmail: string): Promise<string> {
+  private async postContent(message: string, threadId: string, authorEmail: string, notificationEmails: string[]): Promise<string> {
     let content = { flow: this.flowId, content: message, external_user_name: "Autobit", event: "message", thread_id: threadId };
     let headers = {
       "Authorization": this.base64Authorization,
@@ -151,6 +152,10 @@ export class Flowdock {
 
     if (authorEmail) {
       this.sendMessageToUser(authorEmail, message);
+    }
+
+    if (notificationEmails) {
+      notificationEmails.forEach(email => this.sendMessageToUser(email, message));
     }
 
     let response = await this.http.post(`https://api.flowdock.com/messages`, JSON.stringify(content), headers);

@@ -11,6 +11,7 @@ export class PrComposite {
   updatedDate: Date;
   author: string;
   authorEmail: string;
+  notificationEmails: string[];
   openTasks: number;
   approvals: number;
   needWorks: number;
@@ -25,4 +26,5 @@ export class PrComposite {
   lastCommit: string;
   buildStatus: BuildStatus;
   mostRecentCommentDate: number;
+  newCommentsFrom: string[];
 }
