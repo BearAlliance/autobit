@@ -133,6 +133,7 @@ export class BitBucket {
           composite.canMerge !== existingCachedComposite.canMerge ||
           composite.isConflicted !== existingCachedComposite.isConflicted ||
           composite.buildStatus !== existingCachedComposite.buildStatus ||
+          composite.mergeRequested !== existingCachedComposite.mergeRequested ||
           change.oneTimeChangeMessage ||
           change.commentMessage
         ) {
