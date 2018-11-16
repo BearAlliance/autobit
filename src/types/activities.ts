@@ -68,24 +68,6 @@ export interface PermittedOperations {
   deletable: boolean;
 }
 
-export interface Comment2 {
-  properties: Properties2;
-  id: number;
-  version: number;
-  text: string;
-  author: Author2;
-  createdDate: number;
-  updatedDate: number;
-  comments: any[];
-  tasks: any[];
-  permittedOperations: PermittedOperations;
-}
-
-export interface PermittedOperations2 {
-  editable: boolean;
-  deletable: boolean;
-}
-
 export interface Comment {
   properties: Properties;
   id: number;
@@ -94,9 +76,9 @@ export interface Comment {
   author: Author;
   createdDate: any;
   updatedDate: any;
-  comments: Comment2[];
+  comments: Comment[];
   tasks: any[];
-  permittedOperations: PermittedOperations2;
+  permittedOperations: PermittedOperations;
 }
 
 export interface CommentAnchor {

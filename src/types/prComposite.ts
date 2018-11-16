@@ -24,4 +24,5 @@ export class PrComposite {
   threadId: string;
   lastCommit: string;
   buildStatus: BuildStatus;
+  mostRecentCommentDate: number;
 }

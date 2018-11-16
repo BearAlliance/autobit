@@ -118,6 +118,9 @@ class BitBucket {
                 if (existingCachedComposite.lastCommit && composite.lastCommit !== existingCachedComposite.lastCommit) {
                     change.oneTimeChangeMessage = 'New commit added';
                 }
+                if (composite.mostRecentCommentDate !== existingCachedComposite.mostRecentCommentDate) {
+                    change.commentMessage = 'New comment(s) added';
+                }
                 if (composite.title !== existingCachedComposite.title ||
                     composite.approvals !== existingCachedComposite.approvals ||
                     composite.needWorks !== existingCachedComposite.needWorks ||
@@ -125,7 +128,8 @@ class BitBucket {
                     composite.canMerge !== existingCachedComposite.canMerge ||
                     composite.isConflicted !== existingCachedComposite.isConflicted ||
                     composite.buildStatus !== existingCachedComposite.buildStatus ||
-                    change.oneTimeChangeMessage) {
+                    change.oneTimeChangeMessage ||
+                    change.commentMessage) {
                     //if so, push it into the change array
                     changes.push(change);
                 }
@@ -153,7 +157,8 @@ class BitBucket {
                     for (let composite of composites) {
                         currentProcessingStatus + ' / Title: ' + composite.title;
                         let activities = yield this.getActivities(composite.id);
-                        BitBucket.updateCompositeFromActivities(composite, activities.values);
+                        BitBucket.getActionRequestsFromComments(composite, activities.values);
+                        this.setMostRecentCommentDate(composite, activities.values);
                         if (composite.sendMergeRequestNotification) {
                             let requestMessage = `Automerge has been ${composite.mergeRequested ? 'requested' : 'canceled'} for ${this.flowdock.createPRNameLink(composite)} by ${composite.lastAutobitActionRequestedBy}`;
                             yield this.flowdock.postInfo(requestMessage, composite);
@@ -203,6 +208,7 @@ class BitBucket {
                     changes.forEach((change) => __awaiter(this, void 0, void 0, function* () {
                         change.composite.threadId = yield this.flowdock.postChange(change);
                         change.oneTimeChangeMessage = null;
+                        change.commentMessage = null;
                     }));
                     this.lastError = null;
                 }
@@ -293,7 +299,27 @@ class BitBucket {
             composite.buildStatus = BuildStatus.Other;
         }
     }
-    static updateCompositeFromActivities(composite, activities) {
+    setMostRecentCommentDate(composite, activities) {
+        let mostRecentCommentDate = 0;
+        activities.forEach(activity => {
+            if (activity.action === 'COMMENTED') {
+                mostRecentCommentDate = this.findMostRecentCommentDate([activity.comment]);
+            }
+        });
+        composite.mostRecentCommentDate = mostRecentCommentDate;
+    }
+    findMostRecentCommentDate(comments, mostRecent = 0) {
+        comments.forEach(comment => {
+            if (comment.createdDate > mostRecent) {
+                mostRecent = comment.createdDate;
+            }
+            if (comment.comments) {
+                mostRecent = this.findMostRecentCommentDate(comment.comments, mostRecent);
+            }
+        });
+        return mostRecent;
+    }
+    static getActionRequestsFromComments(composite, activities) {
         let commentFound = null;
         let originalMergeRequestedStatus = composite.mergeRequested;
         for (let i = 0; i < activities.length - 1; i++) {

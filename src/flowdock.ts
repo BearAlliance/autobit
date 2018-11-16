@@ -88,6 +88,9 @@ export class Flowdock {
       if (composite.oneTimeChangeMessage) {
         fields.push({ label: composite.oneTimeChangeMessage, emoji: 'eight_pointed_black_star' })
       }
+      if (composite.commentMessage) {
+        fields.push({ label: composite.commentMessage, emoji: 'envelope' })
+      }
       if (composite.composite.canMerge) { fields.push({ label: 'Can merge', emoji: 'white_check_mark' }) };
       this.createBuildStatusField(composite, fields);
     }
