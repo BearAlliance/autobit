@@ -66,7 +66,7 @@ class Flowdock {
     }
     postGeneralMessage(emoji, msg, composite) {
         return __awaiter(this, void 0, void 0, function* () {
-            let callThreadId = yield this.postContent(`:${emoji}: ${msg}`, composite ? composite.threadId : this.generalThreadId, composite ? composite.authorEmail : null, composite.newCommentsFrom);
+            let callThreadId = yield this.postContent(`:${emoji}: ${msg}`, composite ? composite.threadId : this.generalThreadId, composite ? composite.authorEmail : null, composite ? composite.newCommentsFrom : null);
             composite ? (composite.threadId = callThreadId) : (this.generalThreadId = callThreadId);
         });
     }

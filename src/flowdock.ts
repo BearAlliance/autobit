@@ -68,7 +68,10 @@ export class Flowdock {
   }
 
   async postGeneralMessage(emoji: string, msg: string, composite: PrComposite) {
-    let callThreadId = await this.postContent(`:${emoji}: ${msg}`, composite ? composite.threadId : this.generalThreadId, composite ? composite.authorEmail : null, composite.newCommentsFrom);
+    let callThreadId = await this.postContent(`:${emoji}: ${msg}`, 
+    composite ? composite.threadId : this.generalThreadId, 
+    composite ? composite.authorEmail : null, 
+    composite ? composite.newCommentsFrom : null);
     composite ? (composite.threadId = callThreadId) : (this.generalThreadId = callThreadId);
   }
 
