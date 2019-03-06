@@ -26,7 +26,7 @@ export class Flowdock {
 
   flowDockUsers: flowDockUser[];
 
-  constructor(private token: string, private username: string, private flowName: string) {
+  constructor(private token: string, private username: string, private flowName: string, private blacklist: string[]) {
     this.http = new ht.HttpClient('autobit');
     this.base64Authorization = 'BASIC ' + new Buffer(token + ':').toString('base64');
   }
@@ -68,9 +68,9 @@ export class Flowdock {
   }
 
   async postGeneralMessage(emoji: string, msg: string, composite: PrComposite) {
-    let callThreadId = await this.postContent(`:${emoji}: ${msg}`, 
-    composite ? composite.threadId : this.generalThreadId, 
-    composite ? composite.authorEmail : null, 
+    let callThreadId = await this.postContent(`:${emoji}: ${msg}`,
+    composite ? composite.threadId : this.generalThreadId,
+    composite ? composite.authorEmail : null,
     composite ? composite.newCommentsFrom : null);
     composite ? (composite.threadId = callThreadId) : (this.generalThreadId = callThreadId);
   }
@@ -195,8 +195,10 @@ export class Flowdock {
     };
 
     const foundUser = this.flowDockUsers.find(x => x.email.toLowerCase() === email.toLowerCase());
-    // do nothing if user not found
-    if (foundUser) {
+    const userOnBlacklist = this.blacklist.some(user => user === email);
+
+    // do nothing if user not found, or user is on blacklist
+    if (foundUser && !userOnBlacklist) {
       const id = foundUser.id;
       let response = await this.http.post(`https://api.flowdock.com/private/${id}/messages`, JSON.stringify(content), headers);
       HttpUtility.validateHttpResponse(response);

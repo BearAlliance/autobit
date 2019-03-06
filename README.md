@@ -21,6 +21,7 @@ Also, we were getting lots of bitbucket emails, and some of us stopped looking a
 - repository - the repository part of the path, (ex. projects/foo/repos/bar)
 - intervalSeconds - the number of seconds between polling (defaults to 10)
 - flowdockUsername - the name displayed for flowdock automation messages (defaults to autobit)
+- flowdockBlacklist - exclude certain usernames from flowdock messaging
 
 ## Installation
 
