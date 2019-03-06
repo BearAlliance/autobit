@@ -4,6 +4,7 @@
   "bin": {
     "autobit": "./bin/src/main.js"
   },
+  "files": ["./bin/*"],
   "version": "2.2.2",
   "description": "bitbucket automation",
   "main": "main.js",
