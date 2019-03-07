@@ -10,18 +10,20 @@ Also, we were getting lots of bitbucket emails, and some of us stopped looking a
 
 ## Parameters
 
-- username - you have to log in with your credentials to authenticate against bitbucket.  you can pass your username here
-- password - bitbucket password - if not specified you'll be prompted
-- branch - the branch you want to poll (ex. refs/heads/foo/bar) - can be multiple branches (ex. refs/heads/foo/bar refs/heads/bam/baz)
-- flowdockToken - the api token to use to authenticate to flowdock
-- bitbucketBaseUrl - the base url to your bitbucket instance (ex. https://bitbucket.foo.com/rest/api/1.0)
-- proxyBypass - addresses you don't want going through whatever proxy you have (i have a no_proxy export, but it doesn't seem to get honored by the library i'm using) (ex. foo.com)
-- proxyUrl - the url to your proxy, if any
-- flowName - the name of the flow to post to (ex. 'Myflow for automation')
-- repository - the repository part of the path, (ex. projects/foo/repos/bar)
-- intervalSeconds - the number of seconds between polling (defaults to 10)
-- flowdockUsername - the name displayed for flowdock automation messages (defaults to autobit)
-- flowdockBlacklist - exclude certain usernames from flowdock messaging
+| Parameter   | Alias       | Default      | Description |
+| ----------- | ----------- | ------------ |----------- |
+| `--username`          | `-u`  | - | You have to log in with your credentials to authenticate against bitbucket.  you can pass your username here |
+| `--password`          | `-p`  | - | Bitbucket password - if not specified you'll be prompted |
+| `--branch`            | `-b`  | - | The branch you want to poll (ex. refs/heads/foo/bar) can be multiple branches (ex. refs/heads/foo/bar refs/heads/bam/baz) |
+| `--flowdockToken`     | `-f`  | - | The api token to use to authenticate to flowdock |
+| `--bitbucketBaseUrl`  | `-l`  | - | The base url to your bitbucket instance (ex. https://bitbucket.foo.com/rest/api/1.0) |
+| `--proxyBypass`       | `-y`  | - | Addresses you don't want going through whatever proxy you have (i have a no_proxy export, but it doesn't seem to get honored by the library i'm using) (ex. foo.com) |
+| `--proxyUrl`          | `-x`  | `''` | The url to your proxy, if any |
+| `--flowName`          | -     | - | The name of the flow to post to (ex. 'Myflow for automation') |
+| `--repository`        | -     | - | The repository part of the path, (ex. projects/foo/repos/bar) |
+| `--intervalSeconds`   | -     | `10` | The number of seconds between polling (defaults to 10) |
+| `--flowdockUsername`  | -     | `'autobit'` | The name displayed for flowdock automation messages (defaults to autobit) |
+| `--flowdockBlacklist` | -     | - | Exclude certain usernames from flowdock messaging |
 
 ## Installation
 
